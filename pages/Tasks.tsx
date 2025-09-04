@@ -2,15 +2,16 @@ import React, { useState } from 'react';
 import { Task, TeamMember } from '../types';
 import { formatDate } from '../utils/helpers';
 import TaskModal from '../components/TaskModal';
-import { Plus } from 'lucide-react';
+import { Plus, ListChecks } from 'lucide-react';
 
 interface TasksProps {
   tasks: Task[];
   team: TeamMember[];
   onUpdate: (collection: 'tasks', action: 'add' | 'update' | 'delete', data: any) => void;
+  onDelete: (item: Task) => void;
 }
 
-const Tasks: React.FC<TasksProps> = ({ tasks, team, onUpdate }) => {
+const Tasks: React.FC<TasksProps> = ({ tasks, team, onUpdate, onDelete }) => {
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [taskToEdit, setTaskToEdit] = useState<Task | null>(null);
     const [filter, setFilter] = useState<'All' | Task['status']>('All');
@@ -23,12 +24,6 @@ const Tasks: React.FC<TasksProps> = ({ tasks, team, onUpdate }) => {
     const handleAdd = () => {
         setTaskToEdit(null);
         setIsModalOpen(true);
-    };
-
-    const handleDelete = (task: Task) => {
-        if (window.confirm(`Are you sure you want to delete the task "${task.name}"?`)) {
-            onUpdate('tasks', 'delete', task);
-        }
     };
     
     const handleSubmit = (taskData: Omit<Task, 'id'> | Task) => {
@@ -44,14 +39,14 @@ const Tasks: React.FC<TasksProps> = ({ tasks, team, onUpdate }) => {
 
     return (
         <div className="space-y-6">
-            <div className="flex items-center justify-between">
+            <div className="flex flex-col items-start justify-between gap-4 sm:flex-row sm:items-center">
                 <h1 className="text-3xl font-bold text-dark dark:text-light">Tasks</h1>
                 <button onClick={handleAdd} className="flex items-center px-4 py-2 text-white rounded-md bg-primary hover:bg-primary-dark">
                     <Plus size={20} className="mr-2" /> Add Task
                 </button>
             </div>
 
-            <div className="flex items-center space-x-2">
+            <div className="flex flex-wrap items-center gap-2">
                 {(['All', 'Completed', 'In Progress', 'Postponed'] as const).map(status => (
                     <button
                         key={status}
@@ -97,7 +92,7 @@ const Tasks: React.FC<TasksProps> = ({ tasks, team, onUpdate }) => {
                                         <td className="px-6 py-4">
                                             <div className="flex space-x-2">
                                                 <button onClick={() => handleEdit(task)} className="text-yellow-500 hover:text-yellow-700">Edit</button>
-                                                <button onClick={() => handleDelete(task)} className="text-red-500 hover:text-red-700">Delete</button>
+                                                <button onClick={() => onDelete(task)} className="text-red-500 hover:text-red-700">Delete</button>
                                             </div>
                                         </td>
                                     </tr>
@@ -105,7 +100,12 @@ const Tasks: React.FC<TasksProps> = ({ tasks, team, onUpdate }) => {
                             })}
                         </tbody>
                     </table>
-                     {filteredTasks.length === 0 && <p className="p-4 text-center text-gray-500">No tasks found for this filter.</p>}
+                     {filteredTasks.length === 0 && (
+                        <div className="py-8 text-center text-gray-500">
+                            <ListChecks size={40} className="mx-auto mb-2" />
+                            <p>No tasks found for this filter.</p>
+                        </div>
+                    )}
                 </div>
             </div>
 

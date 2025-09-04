@@ -2,7 +2,7 @@ import React from 'react';
 import { Project, Task, TeamMember, BudgetItem } from '../types';
 import Card from '../components/Card';
 import { ListChecks, DollarSign, BarChart3, Clock } from 'lucide-react';
-import { BarChart, Bar, XAxis, YAxis, Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
+import { PieChart, Pie, Cell, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import { formatDate } from '../utils/helpers';
 
 interface DashboardProps {
@@ -37,7 +37,7 @@ const Dashboard: React.FC<DashboardProps> = ({ project, tasks, team, budget }) =
         <div className="space-y-6">
             <h1 className="text-3xl font-bold text-dark dark:text-light">{project.name} Dashboard</h1>
             
-            <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-4">
+            <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
                 <Card title="Completed Tasks" value={`${completedTasks} / ${totalTasks}`} icon={<ListChecks />} color="#10b981" />
                 <Card title="Total Expenses" value={`$${totalExpenses.toLocaleString()}`} icon={<DollarSign />} color="#3b82f6" />
                 <Card title="Overall Progress" value={`${progress}%`} icon={<BarChart3 />} color="#f59e0b" />
@@ -51,17 +51,21 @@ const Dashboard: React.FC<DashboardProps> = ({ project, tasks, team, budget }) =
                 </div>
                 <div className="p-6 bg-white rounded-lg shadow-md dark:bg-dark-secondary">
                     <h2 className="mb-4 text-lg font-semibold text-dark dark:text-light">Tasks Status</h2>
-                    <ResponsiveContainer width="100%" height={200}>
-                        <PieChart>
-                            <Pie data={pieData} cx="50%" cy="50%" labelLine={false} outerRadius={80} fill="#8884d8" dataKey="value">
-                                {pieData.map((entry, index) => (
-                                    <Cell key={`cell-${index}`} fill={PIE_COLORS[index % PIE_COLORS.length]} />
-                                ))}
-                            </Pie>
-                            <Tooltip />
-                            <Legend />
-                        </PieChart>
-                    </ResponsiveContainer>
+                     {tasks.length > 0 ? (
+                        <ResponsiveContainer width="100%" height={200}>
+                            <PieChart>
+                                <Pie data={pieData} cx="50%" cy="50%" labelLine={false} outerRadius={80} fill="#8884d8" dataKey="value">
+                                    {pieData.map((entry, index) => (
+                                        <Cell key={`cell-${index}`} fill={PIE_COLORS[index % PIE_COLORS.length]} />
+                                    ))}
+                                </Pie>
+                                <Tooltip />
+                                <Legend />
+                            </PieChart>
+                        </ResponsiveContainer>
+                    ) : (
+                        <div className="flex items-center justify-center h-full text-gray-500">No task data available.</div>
+                    )}
                 </div>
             </div>
 
@@ -78,7 +82,7 @@ const Dashboard: React.FC<DashboardProps> = ({ project, tasks, team, budget }) =
                             </tr>
                         </thead>
                         <tbody>
-                            {recentTasks.map(task => {
+                            {recentTasks.length > 0 ? recentTasks.map(task => {
                                 const member = team.find(m => m.id === task.assignedTo);
                                 return (
                                     <tr key={task.id} className="bg-white border-b dark:bg-dark-secondary dark:border-gray-700">
@@ -94,10 +98,13 @@ const Dashboard: React.FC<DashboardProps> = ({ project, tasks, team, budget }) =
                                                 {task.status}
                                             </span>
                                         </td>
-
                                     </tr>
                                 );
-                            })}
+                            }) : (
+                                <tr>
+                                    <td colSpan={4} className="py-4 text-center">No recent tasks.</td>
+                                </tr>
+                            )}
                         </tbody>
                     </table>
                 </div>
