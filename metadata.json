@@ -1,0 +1,5 @@
+{
+  "name": "Project Management Dashboard",
+  "description": "A comprehensive project management web application to serve as a central hub for managing projects, teams, tasks, and timelines. It provides a collaborative tool for team members with a focus on clear data visualization and intuitive user interaction.",
+  "requestFramePermissions": []
+}
