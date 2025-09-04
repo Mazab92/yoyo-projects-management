@@ -1,8 +1,8 @@
 import React from 'react';
-import { Project } from '../types';
-import { useLocalization } from '../hooks/useLocalization';
-import { LayoutDashboard, Users, ListChecks, GanttChartSquare, DollarSign, ShieldAlert, Plus, MoreVertical, Pencil, Trash2, X } from 'lucide-react';
 import { NavLink } from 'react-router-dom';
+import { motion } from 'framer-motion';
+import { LayoutDashboard, Users, CheckSquare, Calendar, DollarSign, AlertTriangle, FileText, Image, Plus, Settings, X } from 'lucide-react';
+import { Project } from '../types';
 
 interface SidebarProps {
   projects: Project[];
@@ -15,105 +15,81 @@ interface SidebarProps {
   onClose: () => void;
 }
 
-const Sidebar: React.FC<SidebarProps> = ({ 
-  projects, 
-  selectedProjectId, 
-  onSelectProject,
-  onNewProject,
-  onEditProject,
-  onDeleteProject,
-  isOpen,
-  onClose,
-}) => {
-  const { t, setLocale, locale } = useLocalization();
-  const [openDropdown, setOpenDropdown] = React.useState<string | null>(null);
-
-  const navItems = [
-    { name: 'Dashboard', path: '/dashboard', icon: LayoutDashboard },
-    { name: 'Team', path: '/team', icon: Users },
-    { name: 'Tasks', path: '/tasks', icon: ListChecks },
-    { name: 'Timeline', path: '/timeline', icon: GanttChartSquare },
-    { name: 'Budget', path: '/budget', icon: DollarSign },
-    { name: 'Risks', path: '/risks', icon: ShieldAlert },
+const Sidebar: React.FC<SidebarProps> = ({ projects, selectedProjectId, onSelectProject, onNewProject, isOpen, onClose }) => {
+  const navLinks = [
+    { name: 'Dashboard', icon: <LayoutDashboard size={20} />, path: '/' },
+    { name: 'Tasks', icon: <CheckSquare size={20} />, path: '/tasks' },
+    { name: 'Timeline', icon: <Calendar size={20} />, path: '/timeline' },
+    { name: 'Team', icon: <Users size={20} />, path: '/team' },
+    { name: 'Budget', icon: <DollarSign size={20} />, path: '/budget' },
+    { name: 'Risks', icon: <AlertTriangle size={20} />, path: '/risks' },
+    { name: 'Designs', icon: <Image size={20} />, path: '/designs' },
+    { name: 'Reports', icon: <FileText size={20} />, path: '/reports' },
   ];
-
-  const toggleDropdown = (projectId: string) => {
-    setOpenDropdown(openDropdown === projectId ? null : projectId);
-  };
-
-  const sidebarClasses = `
-    fixed inset-y-0 left-0 z-50 w-64 bg-white dark:bg-dark-secondary flex flex-col h-screen shadow-lg
-    transform transition-transform duration-300 ease-in-out
-    ${isOpen ? 'translate-x-0' : '-translate-x-full'}
-    lg:relative lg:translate-x-0 lg:z-auto
-  `;
 
   return (
     <>
-      {isOpen && <div className="fixed inset-0 z-40 bg-black bg-opacity-50 lg:hidden" onClick={onClose}></div>}
-      <aside className={sidebarClasses}>
-        <div className="flex items-center justify-between p-4 border-b dark:border-gray-700">
-          <h1 className="text-2xl font-bold text-primary">Yoyo PM</h1>
-          <button onClick={onClose} className="p-1 text-gray-500 rounded lg:hidden hover:bg-gray-200 dark:hover:bg-gray-700">
-            <X size={20} />
-          </button>
+      <div className={`fixed inset-0 z-30 bg-black bg-opacity-50 transition-opacity lg:hidden ${isOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'}`} onClick={onClose}></div>
+      <aside className={`fixed inset-y-0 left-0 z-40 flex flex-col w-64 bg-white border-r transform transition-transform lg:relative lg:translate-x-0 dark:bg-dark-secondary dark:border-gray-700 ${isOpen ? 'translate-x-0' : '-translate-x-full'}`}>
+        <div className="flex items-center justify-between h-16 px-4 border-b flex-shrink-0 dark:border-gray-700">
+          <h1 className="text-xl font-bold text-primary">ProjectHub</h1>
+          <motion.button whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }} onClick={onClose} className="p-2 text-gray-500 rounded-md lg:hidden hover:bg-gray-100 dark:hover:bg-gray-700">
+            <X size={24} />
+          </motion.button>
         </div>
+        <div className="flex flex-col flex-grow p-4 overflow-y-auto">
+          <nav className="flex-1 space-y-2">
+            {navLinks.map((link) => (
+              <motion.div key={link.name} whileHover={{ x: 2 }}>
+                <NavLink
+                  to={link.path}
+                  end
+                  onClick={onClose}
+                  className={({ isActive }) =>
+                    `flex items-center px-4 py-2 text-sm font-medium rounded-md ${
+                      isActive
+                        ? 'bg-primary text-white'
+                        : 'text-gray-600 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700'
+                    }`
+                  }
+                >
+                  {link.icon}
+                  <span className="ml-3">{link.name}</span>
+                </NavLink>
+              </motion.div>
+            ))}
+          </nav>
 
-        <div className="flex-1 overflow-y-auto">
-            <div className="p-4">
-                <div className="flex justify-between items-center mb-2">
-                    <h2 className="text-sm font-semibold text-gray-500 uppercase dark:text-gray-400">Projects</h2>
-                    <button onClick={onNewProject} className="p-1 text-gray-500 rounded hover:bg-gray-200 dark:hover:bg-gray-700 dark:text-gray-400">
-                        <Plus size={18} />
-                    </button>
-                </div>
-                <ul className="space-y-1">
-                {projects.map(project => (
-                    <li key={project.id} className={`flex justify-between items-center p-2 rounded-md cursor-pointer text-sm ${selectedProjectId === project.id ? 'bg-primary text-white' : 'hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300'}`}>
-                    <span onClick={() => { onSelectProject(project.id); onClose(); }} className="flex-grow truncate">{project.name}</span>
-                    <div className="relative">
-                        <button onClick={() => toggleDropdown(project.id)} className={`p-1 rounded ${selectedProjectId === project.id ? 'hover:bg-primary-dark' : 'hover:bg-gray-200 dark:hover:bg-gray-600'}`}>
-                            <MoreVertical size={16} />
-                        </button>
-                        {openDropdown === project.id && (
-                            <div className="absolute right-0 z-10 w-32 mt-1 bg-white rounded-md shadow-lg dark:bg-gray-800 ring-1 ring-black ring-opacity-5">
-                                <button onClick={() => { onEditProject(project); setOpenDropdown(null); onClose(); }} className="flex items-center w-full px-3 py-2 text-sm text-left text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700">
-                                    <Pencil size={14} className="mr-2" /> Edit
-                                </button>
-                                <button onClick={() => { onDeleteProject(project.id); setOpenDropdown(null); onClose(); }} className="flex items-center w-full px-3 py-2 text-sm text-left text-red-600 hover:bg-gray-100 dark:hover:bg-gray-700">
-                                    <Trash2 size={14} className="mr-2" /> Delete
-                                </button>
-                            </div>
-                        )}
-                    </div>
-                    </li>
-                ))}
-                </ul>
+          <div className="mt-8">
+            <div className="flex items-center justify-between px-4">
+                <h2 className="text-xs font-semibold tracking-wider text-gray-500 uppercase dark:text-gray-400">Projects</h2>
+                <motion.button whileHover={{ scale: 1.2 }} whileTap={{ scale: 0.9 }} onClick={onNewProject} className="p-1 text-gray-500 rounded-full hover:bg-gray-200 dark:hover:bg-gray-700">
+                    <Plus size={16} />
+                </motion.button>
             </div>
-
-            <nav className="p-4 mt-4 border-t dark:border-gray-700">
-                <ul className="space-y-2">
-                    {navItems.map(item => (
-                        <li key={item.name}>
-                            <NavLink to={item.path} onClick={onClose} className={({ isActive }) => `flex items-center p-2 space-x-3 rounded-md text-sm ${isActive ? 'bg-primary text-white' : 'hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300'}`}>
-                                <item.icon size={20} />
-                                <span>{t(item.name.toLowerCase())}</span>
-                            </NavLink>
-                        </li>
-                    ))}
-                </ul>
-            </nav>
+            <div className="mt-2 space-y-1">
+              {projects.map(project => (
+                <motion.button
+                  key={project.id}
+                  whileHover={{ x: 2 }}
+                  onClick={() => { onSelectProject(project.id); onClose(); }}
+                  className={`w-full text-left flex items-center px-4 py-2 text-sm font-medium rounded-md ${
+                    selectedProjectId === project.id
+                      ? 'bg-primary-light text-primary-dark font-semibold'
+                      : 'text-gray-600 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700'
+                  }`}
+                >
+                  <span className="flex-1 truncate">{project.name}</span>
+                </motion.button>
+              ))}
+            </div>
+          </div>
         </div>
-
-        <div className="p-4 mt-auto border-t dark:border-gray-700">
-            <select
-            value={locale}
-            onChange={(e) => setLocale(e.target.value as 'en' | 'ar')}
-            className="w-full p-2 text-sm bg-gray-100 border-transparent rounded-md dark:bg-gray-700 dark:text-gray-300 focus:ring-primary focus:border-primary"
-            >
-            <option value="en">English</option>
-            <option value="ar">العربية</option>
-            </select>
+        <div className="flex-shrink-0 p-4 border-t dark:border-gray-700">
+            <motion.a whileHover={{ x: 2 }} href="#" className="flex items-center w-full px-4 py-2 text-sm font-medium text-gray-600 rounded-md hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700">
+                <Settings size={20} />
+                <span className="ml-3">Settings</span>
+            </motion.a>
         </div>
       </aside>
     </>

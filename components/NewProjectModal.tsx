@@ -1,72 +1,85 @@
 import React, { useState, useEffect } from 'react';
+import { motion } from 'framer-motion';
 import { Project } from '../types';
 
 interface NewProjectModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onSubmit: (project: Omit<Project, 'id'>) => void;
-  projectToEdit: Project | null;
+  onSave: (project: Omit<Project, 'id' | 'tasks' | 'team' | 'budget' | 'risks'>) => void;
+  editingProject: Project | null;
 }
 
-const NewProjectModal: React.FC<NewProjectModalProps> = ({ isOpen, onClose, onSubmit, projectToEdit }) => {
-  const [formData, setFormData] = useState({
-    name: '',
-    goal: '',
-    duration: '',
-    budget: 0,
-  });
+const NewProjectModal: React.FC<NewProjectModalProps> = ({ isOpen, onClose, onSave, editingProject }) => {
+  const [name, setName] = useState('');
+  const [description, setDescription] = useState('');
+  const [startDate, setStartDate] = useState('');
+  const [endDate, setEndDate] = useState('');
 
   useEffect(() => {
-    if (projectToEdit) {
-      setFormData({
-        name: projectToEdit.name,
-        goal: projectToEdit.goal,
-        duration: projectToEdit.duration,
-        budget: projectToEdit.budget,
-      });
+    if (editingProject) {
+      setName(editingProject.name);
+      setDescription(editingProject.description);
+      setStartDate(new Date(editingProject.startDate).toISOString().split('T')[0]);
+      setEndDate(new Date(editingProject.endDate).toISOString().split('T')[0]);
     } else {
-      setFormData({ name: '', goal: '', duration: '', budget: 0 });
+      setName('');
+      setDescription('');
+      setStartDate('');
+      setEndDate('');
     }
-  }, [projectToEdit]);
-
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-    const { name, value } = e.target;
-    setFormData(prev => ({ ...prev, [name]: name === 'budget' ? Number(value) : value }));
-  };
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    onSubmit(formData);
-  };
+  }, [editingProject, isOpen]);
 
   if (!isOpen) return null;
 
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    onSave({ name, description, startDate, endDate });
+    onClose();
+  };
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
-      <div className="w-full max-w-lg p-8 space-y-6 bg-white rounded-lg shadow-xl dark:bg-dark-secondary">
-        <h2 className="text-2xl font-bold text-dark dark:text-light">{projectToEdit ? 'Edit Project' : 'Create New Project'}</h2>
-        <form onSubmit={handleSubmit} className="space-y-4">
+      <div className="w-full max-w-lg p-6 bg-white rounded-lg shadow-xl dark:bg-dark-secondary">
+        <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
+          {editingProject ? 'Edit Project' : 'New Project'}
+        </h2>
+        <form onSubmit={handleSubmit} className="mt-4 space-y-4">
           <div>
             <label htmlFor="name" className="block text-sm font-medium text-gray-700 dark:text-gray-300">Project Name</label>
-            <input type="text" name="name" id="name" value={formData.name} onChange={handleChange} required className="w-full px-3 py-2 mt-1 text-gray-900 bg-gray-100 border-gray-300 rounded-md shadow-sm dark:bg-gray-700 dark:text-white dark:border-gray-600 focus:ring-primary focus:border-primary" />
+            <input type="text" id="name" value={name} onChange={e => setName(e.target.value)} required className="block w-full px-3 py-2 mt-1 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary sm:text-sm dark:bg-gray-700 dark:border-gray-600 dark:text-white" />
           </div>
-           <div>
-            <label htmlFor="goal" className="block text-sm font-medium text-gray-700 dark:text-gray-300">Project Goal</label>
-            <textarea name="goal" id="goal" value={formData.goal} onChange={handleChange} rows={3} required className="w-full px-3 py-2 mt-1 text-gray-900 bg-gray-100 border-gray-300 rounded-md shadow-sm dark:bg-gray-700 dark:text-white dark:border-gray-600 focus:ring-primary focus:border-primary" />
+          <div>
+            <label htmlFor="description" className="block text-sm font-medium text-gray-700 dark:text-gray-300">Description</label>
+            <textarea id="description" value={description} onChange={e => setDescription(e.target.value)} rows={3} required className="block w-full px-3 py-2 mt-1 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary sm:text-sm dark:bg-gray-700 dark:border-gray-600 dark:text-white"></textarea>
           </div>
-          <div className="grid grid-cols-2 gap-4">
-             <div>
-                <label htmlFor="duration" className="block text-sm font-medium text-gray-700 dark:text-gray-300">Duration</label>
-                <input type="text" name="duration" id="duration" value={formData.duration} onChange={handleChange} required className="w-full px-3 py-2 mt-1 text-gray-900 bg-gray-100 border-gray-300 rounded-md shadow-sm dark:bg-gray-700 dark:text-white dark:border-gray-600 focus:ring-primary focus:border-primary" placeholder="e.g., 3 Months"/>
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <div>
+              <label htmlFor="startDate" className="block text-sm font-medium text-gray-700 dark:text-gray-300">Start Date</label>
+              <input type="date" id="startDate" value={startDate} onChange={e => setStartDate(e.target.value)} required className="block w-full px-3 py-2 mt-1 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary sm:text-sm dark:bg-gray-700 dark:border-gray-600 dark:text-white" />
             </div>
             <div>
-                <label htmlFor="budget" className="block text-sm font-medium text-gray-700 dark:text-gray-300">Budget ($)</label>
-                <input type="number" name="budget" id="budget" value={formData.budget} onChange={handleChange} required className="w-full px-3 py-2 mt-1 text-gray-900 bg-gray-100 border-gray-300 rounded-md shadow-sm dark:bg-gray-700 dark:text-white dark:border-gray-600 focus:ring-primary focus:border-primary" />
+              <label htmlFor="endDate" className="block text-sm font-medium text-gray-700 dark:text-gray-300">End Date</label>
+              <input type="date" id="endDate" value={endDate} onChange={e => setEndDate(e.target.value)} required className="block w-full px-3 py-2 mt-1 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary sm:text-sm dark:bg-gray-700 dark:border-gray-600 dark:text-white" />
             </div>
           </div>
-          <div className="flex justify-end space-x-4">
-            <button type="button" onClick={onClose} className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-200 rounded-md hover:bg-gray-300 dark:bg-gray-600 dark:text-gray-300 dark:hover:bg-gray-500">Cancel</button>
-            <button type="submit" className="px-4 py-2 text-sm font-medium text-white rounded-md bg-primary hover:bg-primary-dark">{projectToEdit ? 'Save Changes' : 'Create Project'}</button>
+          <div className="flex justify-end pt-4 space-x-4">
+            <motion.button
+              type="button"
+              onClick={onClose}
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-md hover:bg-gray-200 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600"
+            >
+              Cancel
+            </motion.button>
+            <motion.button
+              type="submit"
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              className="px-4 py-2 text-sm font-medium text-white rounded-md bg-primary hover:bg-primary-dark"
+            >
+              {editingProject ? 'Update Project' : 'Create Project'}
+            </motion.button>
           </div>
         </form>
       </div>

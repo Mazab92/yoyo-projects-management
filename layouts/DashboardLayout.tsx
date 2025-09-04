@@ -14,6 +14,8 @@ interface DashboardLayoutProps {
   onEditProject: (project: Project) => void;
   onDeleteProject: (id: string) => void;
   onSignOut: () => void;
+  theme: 'light' | 'dark';
+  toggleTheme: () => void;
 }
 
 const DashboardLayout: React.FC<DashboardLayoutProps> = (props) => {
@@ -31,6 +33,8 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = (props) => {
           user={props.user}
           onSignOut={props.onSignOut}
           onMenuClick={() => setSidebarOpen(true)}
+          theme={props.theme}
+          toggleTheme={props.toggleTheme}
         />
         {props.children}
       </div>

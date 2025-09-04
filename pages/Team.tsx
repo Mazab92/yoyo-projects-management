@@ -1,99 +1,51 @@
-import React, { useState } from 'react';
-import { TeamMember } from '../types';
-import { getInitials } from '../utils/helpers';
-import TeamMemberModal from '../components/TeamMemberModal';
-import { Plus, UserPlus } from 'lucide-react';
+import React from 'react';
+import { Project } from '../types';
+import EmptyState from '../components/EmptyState';
 
 interface TeamProps {
-  team: TeamMember[];
-  onUpdate: (collection: 'team', action: 'add' | 'update' | 'delete', data: any) => void;
-  onDelete: (item: TeamMember) => void;
+  project: Project | null;
 }
 
-const Team: React.FC<TeamProps> = ({ team, onUpdate, onDelete }) => {
-    const [isModalOpen, setIsModalOpen] = useState(false);
-    const [memberToEdit, setMemberToEdit] = useState<TeamMember | null>(null);
-
-    const handleEdit = (member: TeamMember) => {
-        setMemberToEdit(member);
-        setIsModalOpen(true);
-    };
-
-    const handleAdd = () => {
-        setMemberToEdit(null);
-        setIsModalOpen(true);
-    };
-
-    const handleSubmit = (memberData: Omit<TeamMember, 'id'> | TeamMember) => {
-        if ('id' in memberData) {
-            onUpdate('team', 'update', memberData);
-        } else {
-            onUpdate('team', 'add', memberData);
-        }
-        setIsModalOpen(false);
-    };
-
-    if (team.length === 0) {
-        return (
-             <div className="flex flex-col items-center justify-center h-full text-center text-gray-500">
-                <UserPlus size={48} className="mb-4" />
-                <h2 className="text-2xl font-semibold">No Team Members Yet</h2>
-                <p className="mt-2">Add the first member to your project team.</p>
-                <button onClick={handleAdd} className="flex items-center mt-4 px-4 py-2 text-white rounded-md bg-primary hover:bg-primary-dark">
-                    <Plus size={20} className="mr-2" /> Add Member
-                </button>
-                {isModalOpen && (
-                    <TeamMemberModal 
-                        isOpen={isModalOpen}
-                        onClose={() => setIsModalOpen(false)}
-                        onSubmit={handleSubmit}
-                        memberToEdit={memberToEdit}
-                    />
-                )}
-            </div>
-        )
-    }
-
+const Team: React.FC<TeamProps> = ({ project }) => {
+  if (!project) {
     return (
-        <div className="space-y-6">
-            <div className="flex flex-col items-start justify-between gap-4 sm:flex-row sm:items-center">
-                <h1 className="text-3xl font-bold text-dark dark:text-light">Team</h1>
-                <button onClick={handleAdd} className="flex items-center px-4 py-2 text-white rounded-md bg-primary hover:bg-primary-dark">
-                    <Plus size={20} className="mr-2" /> Add Member
-                </button>
-            </div>
-
-            <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-                {team.map(member => (
-                    <div key={member.id} className="p-6 text-center bg-white rounded-lg shadow-md dark:bg-dark-secondary">
-                        {member.avatar ? (
-                            <img src={member.avatar} alt={member.name} className="object-cover w-24 h-24 mx-auto mb-4 rounded-full" />
-                        ) : (
-                            <div className="flex items-center justify-center w-24 h-24 mx-auto mb-4 text-3xl font-bold text-white bg-indigo-500 rounded-full">
-                                {getInitials(member.name)}
-                            </div>
-                        )}
-                        <h3 className="text-lg font-semibold text-dark dark:text-light">{member.name}</h3>
-                        <p className="text-sm text-gray-500 dark:text-gray-400">{member.role}</p>
-                        <p className="mt-2 text-sm text-primary truncate">{member.email}</p>
-                        <div className="flex justify-center mt-4 space-x-2">
-                             <button onClick={() => handleEdit(member)} className="px-3 py-1 text-sm text-white bg-yellow-500 rounded-md hover:bg-yellow-600">Edit</button>
-                             <button onClick={() => onDelete(member)} className="px-3 py-1 text-sm text-white bg-red-500 rounded-md hover:bg-red-600">Delete</button>
-                        </div>
-                    </div>
-                ))}
-            </div>
-            
-            {isModalOpen && (
-                <TeamMemberModal 
-                    isOpen={isModalOpen}
-                    onClose={() => setIsModalOpen(false)}
-                    onSubmit={handleSubmit}
-                    memberToEdit={memberToEdit}
-                />
-            )}
-        </div>
+        <main className="flex-1 p-6 overflow-y-auto bg-light dark:bg-dark">
+            <EmptyState title="No Project Selected" message="Please select a project to see the team." />
+        </main>
     );
+  }
+
+  return (
+    <main className="flex-1 p-6 overflow-y-auto bg-light dark:bg-dark">
+      <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Team for {project.name}</h1>
+      {project.team.length === 0 ? (
+        <EmptyState title="No Team Members" message="Add team members to your project." />
+      ) : (
+        <div className="mt-6 overflow-x-auto bg-white rounded-lg shadow dark:bg-dark-secondary">
+          <table className="w-full text-sm text-left text-gray-500 dark:text-gray-400">
+            <thead className="text-xs text-gray-700 uppercase bg-gray-50 dark:bg-gray-700 dark:text-gray-400">
+              <tr>
+                <th scope="col" className="px-6 py-3">Name</th>
+                <th scope="col" className="px-6 py-3">Role</th>
+                <th scope="col" className="px-6 py-3">Email</th>
+              </tr>
+            </thead>
+            <tbody>
+              {project.team.map(member => (
+                <tr key={member.id} className="bg-white border-b dark:bg-dark-secondary dark:border-gray-700">
+                  <th scope="row" className="px-6 py-4 font-medium text-gray-900 whitespace-nowrap dark:text-white">
+                    {member.name}
+                  </th>
+                  <td className="px-6 py-4">{member.role}</td>
+                  <td className="px-6 py-4">{member.email}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+    </main>
+  );
 };
 
 export default Team;
