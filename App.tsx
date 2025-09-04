@@ -130,15 +130,29 @@ const useLocalization = () => {
   return context;
 };
 
-// --- FIREBASE CONFIGURATION ---
+// --- FIREBASE CONFIGURATION & INITIALIZATION ---
 const firebaseConfig = (window as any).__firebase_config;
-const app = !getApps().length ? initializeApp(firebaseConfig) : getApp();
-const auth = getAuth(app);
-const db = getFirestore(app);
-const getCollectionPath = (path: string) => `artifacts/${(window as any).APP_ID}/public/data/${path}`;
-const projectsCollectionRef = () => collection(db, getCollectionPath('projects'));
-const projectDocRef = (projectId: string) => doc(db, getCollectionPath(`projects/${projectId}`));
-const subCollectionRef = (projectId: string, subCollection: string) => collection(db, getCollectionPath(`projects/${projectId}/${subCollection}`));
+
+let auth: any;
+let db: any;
+let getCollectionPath: (path: string) => string;
+let projectsCollectionRef: () => any;
+let projectDocRef: (projectId: string) => any;
+let subCollectionRef: (projectId: string, subCollection: string) => any;
+
+if (firebaseConfig) {
+  try {
+    const app = !getApps().length ? initializeApp(firebaseConfig) : getApp();
+    auth = getAuth(app);
+    db = getFirestore(app);
+    getCollectionPath = (path: string) => `artifacts/${(window as any).APP_ID}/public/data/${path}`;
+    projectsCollectionRef = () => collection(db, getCollectionPath('projects'));
+    projectDocRef = (projectId: string) => doc(db, getCollectionPath(`projects/${projectId}`));
+    subCollectionRef = (projectId: string, subCollection: string) => collection(db, getCollectionPath(`projects/${projectId}/${subCollection}`));
+  } catch (error) {
+    console.error("Firebase initialization error:", error);
+  }
+}
 
 // --- REUSABLE UI COMPONENTS ---
 
@@ -886,6 +900,22 @@ const AppContent: React.FC<{ user: User }> = ({ user }) => {
 
 // --- ROOT APP COMPONENT ---
 const App: React.FC = () => {
+    if (!firebaseConfig) {
+        return (
+            <LocalizationProvider>
+                 <div className="flex items-center justify-center h-screen bg-light dark:bg-dark p-8 text-center font-sans">
+                    <div className="bg-white dark:bg-dark-secondary p-8 rounded-xl shadow-2xl max-w-lg">
+                        <h1 className="text-2xl font-bold mb-4 text-red-600 dark:text-red-400">Firebase Configuration Missing</h1>
+                        <p className="text-gray-700 dark:text-gray-300">
+                            The application cannot connect to the backend because the Firebase configuration is not available.
+                            This usually happens when running the app outside of a configured Firebase Hosting environment.
+                        </p>
+                    </div>
+                </div>
+            </LocalizationProvider>
+        );
+    }
+    
     const [user, setUser] = useState<User | null>(null);
     const [loading, setLoading] = useState(true);
 
@@ -898,7 +928,11 @@ const App: React.FC = () => {
     }, []);
 
     if (loading) {
-        return <div className="flex items-center justify-center h-screen bg-light dark:bg-dark text-dark dark:text-light">Loading...</div>;
+        return (
+            <LocalizationProvider>
+                <div className="flex items-center justify-center h-screen bg-light dark:bg-dark text-dark dark:text-light">Loading...</div>
+            </LocalizationProvider>
+        );
     }
 
     return (
