@@ -1,7 +1,7 @@
 
 import React, { useState } from 'react';
 import { Page, Project } from '../types';
-import { LayoutDashboard, Users, ListChecks, GanttChartSquare, ChevronsUpDown, PlusCircle, Wallet, ShieldAlert, X, Rocket } from 'lucide-react';
+import { LayoutDashboard, Users, ListChecks, GanttChartSquare, ChevronsUpDown, PlusCircle, Wallet, ShieldAlert, X, Rocket, Trash2 } from 'lucide-react';
 import { useLocalization } from '../hooks/useLocalization';
 
 interface SidebarProps {
@@ -11,6 +11,7 @@ interface SidebarProps {
   selectedProjectId: number | null;
   onSelectProject: (id: number) => void;
   onNewProject: () => void;
+  onDeleteProject: (id: number) => void;
   isSidebarOpen: boolean;
   onClose: () => void;
 }
@@ -34,7 +35,7 @@ const NavItem: React.FC<{
   </li>
 );
 
-const Sidebar: React.FC<SidebarProps> = ({ activePage, setActivePage, projects, selectedProjectId, onSelectProject, onNewProject, isSidebarOpen, onClose }) => {
+const Sidebar: React.FC<SidebarProps> = ({ activePage, setActivePage, projects, selectedProjectId, onSelectProject, onNewProject, onDeleteProject, isSidebarOpen, onClose }) => {
   const { t } = useLocalization();
 
   const navItems: { label: Page; icon: React.ReactNode }[] = [
@@ -47,6 +48,14 @@ const Sidebar: React.FC<SidebarProps> = ({ activePage, setActivePage, projects, 
   ];
   const [isProjectDropdownOpen, setProjectDropdownOpen] = useState(false);
   const selectedProject = projects.find(p => p.id === selectedProjectId);
+
+  const handleDeleteClick = (e: React.MouseEvent, projectId: number) => {
+    e.stopPropagation();
+    if (window.confirm(t('deleteProjectConfirmation'))) {
+        onDeleteProject(projectId);
+        setProjectDropdownOpen(false); // Close dropdown after deletion
+    }
+  };
 
   return (
     <>
@@ -83,8 +92,15 @@ const Sidebar: React.FC<SidebarProps> = ({ activePage, setActivePage, projects, 
             <div className="absolute mt-2 w-full bg-white dark:bg-dark-secondary rounded-lg shadow-lg z-10 border border-gray-200 dark:border-gray-700 max-h-60 overflow-y-auto">
               <ul>
                 {projects.map(project => (
-                  <li key={project.id} onClick={() => { onSelectProject(project.id); setProjectDropdownOpen(false); }} className="px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-800 cursor-pointer text-sm">
-                    {project.name}
+                  <li key={project.id} onClick={() => { onSelectProject(project.id); setProjectDropdownOpen(false); }} className="group px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-800 cursor-pointer text-sm flex justify-between items-center">
+                    <span className="truncate">{project.name}</span>
+                    <button 
+                      onClick={(e) => handleDeleteClick(e, project.id)}
+                      className="text-red-500 hover:text-red-700 opacity-0 group-hover:opacity-100 transition-opacity p-1"
+                      title={t('deleteProject')}
+                    >
+                      <Trash2 size={16} />
+                    </button>
                   </li>
                 ))}
               </ul>

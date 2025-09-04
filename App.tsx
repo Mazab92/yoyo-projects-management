@@ -67,6 +67,20 @@ const AppContent: React.FC = () => {
     setProjects(newProjects);
     handleCloseProjectModal();
   };
+  
+  const handleDeleteProject = (projectId: number) => {
+    const updatedProjects = projects.filter(p => p.id !== projectId);
+    
+    if (selectedProjectId === projectId) {
+        if (updatedProjects.length > 0) {
+            setSelectedProjectId(updatedProjects[0].id);
+        } else {
+            setSelectedProjectId(null);
+        }
+    }
+    
+    setProjects(updatedProjects);
+  };
 
   const handleTasksUpdate = (updatedTasks: Task[]) => {
     if (!selectedProjectId) return;
@@ -134,6 +148,7 @@ const AppContent: React.FC = () => {
             handleOpenProjectModal(null);
             setIsSidebarOpen(false);
         }}
+        onDeleteProject={handleDeleteProject}
         isSidebarOpen={isSidebarOpen}
         onClose={() => setIsSidebarOpen(false)}
       />
