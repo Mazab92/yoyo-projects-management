@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Project, Task, TaskStatus } from '../types';
 import { formatDate } from '../utils/helpers';
@@ -19,16 +18,16 @@ const TaskStatusBadge: React.FC<{ status: TaskStatus }> = ({ status }) => {
 
 interface TasksProps {
   project: Project;
-  onTasksUpdate: (tasks: Task[]) => void;
+  onUpdate: (action: 'add' | 'update' | 'delete', task: Partial<Task>, taskId?: string) => void;
 }
 
-const Tasks: React.FC<TasksProps> = ({ project, onTasksUpdate }) => {
+const Tasks: React.FC<TasksProps> = ({ project, onUpdate }) => {
   const { t } = useLocalization();
   const { tasks, team } = project;
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingTask, setEditingTask] = useState<Task | null>(null);
 
-  const getMemberById = (id: number) => team.find(m => m.id === id);
+  const getMemberById = (id: string) => team.find(m => m.id === id);
 
   const handleOpenModal = (task: Task | null = null) => {
     setEditingTask(task);
@@ -40,23 +39,18 @@ const Tasks: React.FC<TasksProps> = ({ project, onTasksUpdate }) => {
     setIsModalOpen(false);
   };
 
-  const handleSubmitTask = (taskData: Omit<Task, 'id'> & { id?: number }) => {
-    let updatedTasks: Task[];
-    if (taskData.id) { // Editing existing task
-      updatedTasks = tasks.map(t => t.id === taskData.id ? { ...t, ...taskData } : t);
-    } else { // Adding new task
-      const newId = tasks.length > 0 ? Math.max(...tasks.map(t => t.id)) + 1 : 1;
-      const newTask: Task = { ...taskData, id: newId };
-      updatedTasks = [...tasks, newTask];
+  const handleSubmitTask = (taskData: Omit<Task, 'id'> & { id?: string }) => {
+    if (taskData.id) {
+      onUpdate('update', taskData);
+    } else {
+      onUpdate('add', taskData);
     }
-    onTasksUpdate(updatedTasks);
     handleCloseModal();
   };
   
-  const handleDeleteTask = (taskId: number) => {
+  const handleDeleteTask = (taskId: string) => {
     if (window.confirm(t('deleteTaskConfirmation'))) {
-        const updatedTasks = tasks.filter(t => t.id !== taskId);
-        onTasksUpdate(updatedTasks);
+        onUpdate('delete', {}, taskId);
     }
   };
 

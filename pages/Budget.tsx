@@ -1,4 +1,3 @@
-
 import React, { useState, useMemo } from 'react';
 import { Project, BudgetItem } from '../types';
 import { formatCurrency } from '../utils/helpers';
@@ -9,10 +8,10 @@ import BudgetModal from '../components/BudgetModal';
 
 interface BudgetProps {
   project: Project;
-  onBudgetItemsUpdate: (items: BudgetItem[]) => void;
+  onUpdate: (action: 'add' | 'update' | 'delete', item: Partial<BudgetItem>, itemId?: string) => void;
 }
 
-const Budget: React.FC<BudgetProps> = ({ project, onBudgetItemsUpdate }) => {
+const Budget: React.FC<BudgetProps> = ({ project, onUpdate }) => {
   const { t } = useLocalization();
   const { budgetItems, budget: totalBudget } = project;
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -31,21 +30,18 @@ const Budget: React.FC<BudgetProps> = ({ project, onBudgetItemsUpdate }) => {
     setIsModalOpen(false);
   };
 
-  const handleSubmit = (itemData: Omit<BudgetItem, 'id'> & { id?: number }) => {
-    let updatedItems: BudgetItem[];
+  const handleSubmit = (itemData: Omit<BudgetItem, 'id'> & { id?: string }) => {
     if (itemData.id) {
-      updatedItems = budgetItems.map(i => i.id === itemData.id ? { ...i, ...itemData } : i);
+      onUpdate('update', itemData);
     } else {
-      const newId = budgetItems.length > 0 ? Math.max(...budgetItems.map(i => i.id)) + 1 : 1;
-      updatedItems = [...budgetItems, { ...itemData, id: newId }];
+      onUpdate('add', itemData);
     }
-    onBudgetItemsUpdate(updatedItems);
     handleCloseModal();
   };
   
-  const handleDelete = (itemId: number) => {
+  const handleDelete = (itemId: string) => {
     if (window.confirm(t('deleteBudgetItemConfirmation'))) {
-        onBudgetItemsUpdate(budgetItems.filter(i => i.id !== itemId));
+        onUpdate('delete', {}, itemId);
     }
   };
 

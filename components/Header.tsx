@@ -1,20 +1,31 @@
-
 import React from 'react';
-import { Search, Bell, Languages, Menu } from 'lucide-react';
+import { Search, Bell, Languages, Menu, LogOut } from 'lucide-react';
 import { useLocalization } from '../hooks/useLocalization';
 import { Page } from '../types';
+import { User, signOut } from 'firebase/auth';
+// FIX: auth is now properly exported from App.tsx
+import { auth } from '../App'; 
 
 interface HeaderProps {
   title: Page;
+  user: User;
   onMenuClick: () => void;
 }
 
-const Header: React.FC<HeaderProps> = ({ title, onMenuClick }) => {
+const Header: React.FC<HeaderProps> = ({ title, user, onMenuClick }) => {
   const { language, setLanguage, t } = useLocalization();
 
   const toggleLanguage = () => {
     const newLang = language === 'en' ? 'ar' : 'en';
     setLanguage(newLang);
+  };
+
+  const handleSignOut = async () => {
+    try {
+      await signOut(auth);
+    } catch (error) {
+      console.error("Error signing out: ", error);
+    }
   };
 
   return (
@@ -46,12 +57,15 @@ const Header: React.FC<HeaderProps> = ({ title, onMenuClick }) => {
           <Bell size={20} />
         </button>
         <div className="flex items-center">
-            <img src="https://picsum.photos/id/1005/200" alt="User Avatar" className="w-10 h-10 rounded-full object-cover" />
+            <img src={`https://i.pravatar.cc/150?u=${user.uid}`} alt="User Avatar" className="w-10 h-10 rounded-full object-cover" />
             <div className="ms-3 hidden md:block">
-                <p className="font-semibold text-sm">Eleanor Vance</p>
-                <p className="text-xs text-gray-500 dark:text-gray-400">Project Manager</p>
+                <p className="font-semibold text-sm truncate max-w-[120px]" title={user.email || user.uid}>{user.email || 'User'}</p>
+                <p className="text-xs text-gray-500 dark:text-gray-400 truncate max-w-[120px]">ID: {user.uid}</p>
             </div>
         </div>
+        <button onClick={handleSignOut} className="p-2 rounded-full hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors" title="Sign Out">
+          <LogOut size={20} />
+        </button>
       </div>
     </header>
   );

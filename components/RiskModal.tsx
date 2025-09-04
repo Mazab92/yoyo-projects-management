@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { X } from 'lucide-react';
 import { Risk, RiskSeverity } from '../types';
@@ -6,7 +5,7 @@ import { useLocalization } from '../hooks/useLocalization';
 
 interface RiskModalProps {
   onClose: () => void;
-  onSubmit: (data: Omit<Risk, 'id'> & { id?: number }) => void;
+  onSubmit: (data: Omit<Risk, 'id'> & { id?: string }) => void;
   riskToEdit: Risk | null;
 }
 

@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { X } from 'lucide-react';
 import { Task, TeamMember, TaskStatus } from '../types';
@@ -6,19 +5,19 @@ import { useLocalization } from '../hooks/useLocalization';
 
 interface TaskModalProps {
   onClose: () => void;
-  onSubmit: (taskData: Omit<Task, 'id'> & { id?: number }) => void;
+  onSubmit: (taskData: Omit<Task, 'id'> & { id?: string }) => void;
   taskToEdit: Task | null;
   teamMembers: TeamMember[];
 }
 
-type TaskFormData = Omit<Task, 'id'> & { id?: number };
+type TaskFormData = Omit<Task, 'id'> & { id?: string };
 
 const TaskModal: React.FC<TaskModalProps> = ({ onClose, onSubmit, taskToEdit, teamMembers }) => {
   const { t } = useLocalization();
   const [formData, setFormData] = useState<TaskFormData>({
     name: '',
     description: '',
-    assignedTo: 0,
+    assignedTo: '',
     status: TaskStatus.NotStarted,
     startDate: '',
     endDate: '',
@@ -45,7 +44,7 @@ const TaskModal: React.FC<TaskModalProps> = ({ onClose, onSubmit, taskToEdit, te
   
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
-    setFormData(prev => ({ ...prev, [name]: name === 'assignedTo' ? Number(value) : value }));
+    setFormData(prev => ({ ...prev, [name]: value }));
   };
 
   const handleSubmit = (e: React.FormEvent) => {

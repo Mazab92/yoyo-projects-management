@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Project, Risk, RiskSeverity } from '../types';
 import { PlusCircle, Pencil, Trash2 } from 'lucide-react';
@@ -7,7 +6,7 @@ import RiskModal from '../components/RiskModal';
 
 interface RisksProps {
   project: Project;
-  onRisksUpdate: (risks: Risk[]) => void;
+  onUpdate: (action: 'add' | 'update' | 'delete', risk: Partial<Risk>, riskId?: string) => void;
 }
 
 const SeverityBadge: React.FC<{ severity: RiskSeverity }> = ({ severity }) => {
@@ -20,7 +19,7 @@ const SeverityBadge: React.FC<{ severity: RiskSeverity }> = ({ severity }) => {
   return <span className={`${baseClasses} ${severityClasses[severity]}`}>{severity}</span>;
 };
 
-const Risks: React.FC<RisksProps> = ({ project, onRisksUpdate }) => {
+const Risks: React.FC<RisksProps> = ({ project, onUpdate }) => {
   const { t } = useLocalization();
   const { risks } = project;
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -36,21 +35,18 @@ const Risks: React.FC<RisksProps> = ({ project, onRisksUpdate }) => {
     setIsModalOpen(false);
   };
 
-  const handleSubmit = (riskData: Omit<Risk, 'id'> & { id?: number }) => {
-    let updatedRisks: Risk[];
+  const handleSubmit = (riskData: Omit<Risk, 'id'> & { id?: string }) => {
     if (riskData.id) {
-      updatedRisks = risks.map(r => r.id === riskData.id ? { ...r, ...riskData } : r);
+      onUpdate('update', riskData);
     } else {
-      const newId = risks.length > 0 ? Math.max(...risks.map(r => r.id)) + 1 : 1;
-      updatedRisks = [...risks, { ...riskData, id: newId }];
+      onUpdate('add', riskData);
     }
-    onRisksUpdate(updatedRisks);
     handleCloseModal();
   };
   
-  const handleDelete = (riskId: number) => {
+  const handleDelete = (riskId: string) => {
     if (window.confirm(t('deleteRiskConfirmation'))) {
-        onRisksUpdate(risks.filter(r => r.id !== riskId));
+        onUpdate('delete', {}, riskId);
     }
   };
 

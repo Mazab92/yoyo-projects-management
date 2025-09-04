@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { X } from 'lucide-react';
 import { BudgetItem } from '../types';
@@ -6,7 +5,7 @@ import { useLocalization } from '../hooks/useLocalization';
 
 interface BudgetModalProps {
   onClose: () => void;
-  onSubmit: (data: Omit<BudgetItem, 'id'> & { id?: number }) => void;
+  onSubmit: (data: Omit<BudgetItem, 'id'> & { id?: string }) => void;
   itemToEdit: BudgetItem | null;
 }
 

@@ -7,10 +7,10 @@ interface SidebarProps {
   activePage: Page;
   setActivePage: (page: Page) => void;
   projects: Project[];
-  selectedProjectId: number | null;
-  onSelectProject: (id: number) => void;
+  selectedProjectId: string | null;
+  onSelectProject: (id: string) => void;
   onNewProject: () => void;
-  onDeleteProject: (id: number) => void;
+  onDeleteProject: (id: string) => void;
   isSidebarOpen: boolean;
   onClose: () => void;
 }
@@ -48,17 +48,15 @@ const Sidebar: React.FC<SidebarProps> = ({ activePage, setActivePage, projects, 
   const [isProjectDropdownOpen, setProjectDropdownOpen] = useState(false);
   const selectedProject = projects.find(p => p.id === selectedProjectId);
 
-  const handleSelectProject = (projectId: number) => {
+  const handleSelectProject = (projectId: string) => {
     onSelectProject(projectId);
     setProjectDropdownOpen(false);
   };
 
-  const handleDeleteClick = (e: React.MouseEvent, projectId: number) => {
+  const handleDeleteClick = (e: React.MouseEvent, projectId: string) => {
     e.stopPropagation();
-    if (window.confirm(t('deleteProjectConfirmation'))) {
-        onDeleteProject(projectId);
-        setProjectDropdownOpen(false); // Close dropdown after deletion
-    }
+    onDeleteProject(projectId);
+    setProjectDropdownOpen(false); // Close dropdown after deletion
   };
 
   return (

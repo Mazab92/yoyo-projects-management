@@ -20,7 +20,7 @@ export enum RiskSeverity {
 }
 
 export interface TeamMember {
-  id: number;
+  id: string;
   name: string;
   role: UserRole;
   avatarUrl: string;
@@ -28,31 +28,31 @@ export interface TeamMember {
 }
 
 export interface Task {
-  id: number;
+  id: string;
   name: string;
   description: string;
-  assignedTo: number; // TeamMember ID
+  assignedTo: string; // TeamMember ID
   status: TaskStatus;
   startDate: string; // YYYY-MM-DD
   endDate: string; // YYYY-MM-DD
 }
 
 export interface BudgetItem {
-  id: number;
+  id: string;
   name: string;
   expectedCost: number;
   actualCost: number;
 }
 
 export interface Risk {
-  id: number;
+  id: string;
   description: string;
   severity: RiskSeverity;
   solution: string;
 }
 
 export interface Project {
-  id: number;
+  id: string;
   name: string;
   goal: string;
   duration: {

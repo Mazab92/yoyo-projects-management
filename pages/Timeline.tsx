@@ -129,7 +129,7 @@ const Timeline: React.FC<TimelineProps> = ({ project }) => {
         [UserRole.Production]: 'bg-teal-500',
     };
     
-    const getRoleColor = (memberId: number, team: TeamMember[]) => {
+    const getRoleColor = (memberId: string, team: TeamMember[]) => {
         const member = team.find(m => m.id === memberId);
         return member ? roleColors[member.role] : 'bg-gray-500';
     };

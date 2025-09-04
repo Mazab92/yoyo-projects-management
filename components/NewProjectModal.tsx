@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { X } from 'lucide-react';
 import { Project } from '../types';
@@ -6,7 +5,7 @@ import { useLocalization } from '../hooks/useLocalization';
 
 interface NewProjectModalProps {
   onClose: () => void;
-  onSubmit: (projectData: { id?: number; name: string; goal: string; startDate: string; endDate: string; budget: number }) => void;
+  onSubmit: (projectData: { id?: string; name: string; goal: string; startDate: string; endDate: string; budget: number }) => void;
   projectToEdit?: Project | null;
 }
 
