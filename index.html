@@ -1,17 +1,70 @@
-<script type="importmap">
-{
-  "imports": {
-    "react": "https://aistudiocdn.com/react@^19.1.1",
-    "react-dom/": "https://aistudiocdn.com/react-dom@^19.1.1/",
-    "react/": "https://aistudiocdn.com/react@^19.1.1/",
-    "react-router-dom": "https://aistudiocdn.com/react-router-dom@^7.8.2",
-    "firebase/": "https://aistudiocdn.com/firebase@^12.2.1/",
-    "lucide-react": "https://aistudiocdn.com/lucide-react@^0.542.0",
-    "react-chartjs-2": "https://aistudiocdn.com/react-chartjs-2@^5.3.0",
-    "chart.js": "https://aistudiocdn.com/chart.js@^4.5.0",
-    "framer-motion": "https://aistudiocdn.com/framer-motion@^11.3.19",
-    "@google/genai": "https://aistudiocdn.com/@google/genai@^1.17.0"
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <link rel="icon" type="image/svg+xml" href="/vite.svg" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Project Management Dashboard</title>
+
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+  <!-- Import Map for JS Modules -->
+  <script type="importmap">
+  {
+    "imports": {
+      "react": "https://aistudiocdn.com/react@^19.1.1",
+      "react-dom/": "https://aistudiocdn.com/react-dom@^19.1.1/",
+      "react/": "https://aistudiocdn.com/react@^19.1.1/",
+      "react-router-dom": "https://aistudiocdn.com/react-router-dom@^7.8.2",
+      "firebase/": "https://aistudiocdn.com/firebase@^12.2.1/",
+      "lucide-react": "https://aistudiocdn.com/lucide-react@^0.542.0",
+      "react-chartjs-2": "https://aistudiocdn.com/react-chartjs-2@^5.3.0",
+      "chart.js": "https://aistudiocdn.com/chart.js@^4.5.0",
+      "framer-motion": "https://aistudiocdn.com/framer-motion@^11.3.19",
+      "@google/genai": "https://aistudiocdn.com/@google/genai@^1.17.0"
+    }
   }
-}
-</script>
-full contents of index.html
+  </script>
+  
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            primary: {
+              light: '#a5b4fc',
+              DEFAULT: '#4f46e5',
+              dark: '#4338ca',
+            },
+            dark: {
+              DEFAULT: '#111827',
+              secondary: '#1f2937',
+            },
+            light: '#f9fafb',
+          },
+          fontFamily: {
+            sans: ['Inter', 'sans-serif'],
+          },
+        },
+      },
+    }
+  </script>
+  
+  <style>
+    body {
+        font-family: 'Inter', sans-serif;
+    }
+  </style>
+
+</head>
+<body>
+  <div id="root"></div>
+  <script type="module" src="/index.tsx"></script>
+</body>
+</html>
