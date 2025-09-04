@@ -2,7 +2,7 @@
 import React, { useState, useEffect, createContext, useContext, ReactNode, useMemo } from 'react';
 import { LayoutDashboard, Users, ListChecks, GanttChartSquare, ChevronsUpDown, PlusCircle, Wallet, ShieldAlert, X, Rocket, Trash2, Search, Bell, Languages, Menu, LogOut, DollarSign, Calendar, CheckCircle, ListTodo, Pencil, UserPlus, Mail, Briefcase, Filter, TrendingUp, TrendingDown, Minus } from 'lucide-react';
 import { PieChart, Pie, Cell, Tooltip, Legend, ResponsiveContainer } from 'recharts';
-import { initializeApp } from 'firebase/app';
+import { initializeApp, getApps, getApp } from 'firebase/app';
 import { getAuth, onAuthStateChanged, User, signInWithEmailAndPassword, signOut } from 'firebase/auth';
 import { getFirestore, collection, onSnapshot, doc, addDoc, updateDoc, deleteDoc, writeBatch, getDocs } from 'firebase/firestore';
 
@@ -132,7 +132,7 @@ const useLocalization = () => {
 
 // --- FIREBASE CONFIGURATION ---
 const firebaseConfig = (window as any).__firebase_config;
-const app = initializeApp(firebaseConfig);
+const app = !getApps().length ? initializeApp(firebaseConfig) : getApp();
 const auth = getAuth(app);
 const db = getFirestore(app);
 const getCollectionPath = (path: string) => `artifacts/${(window as any).APP_ID}/public/data/${path}`;
@@ -242,13 +242,11 @@ const NewProjectModal: React.FC<{ onClose: () => void; onSubmit: (data: any) => 
 
 const TaskModal: React.FC<{ onClose: () => void; onSubmit: (data: any) => void; taskToEdit: Task | null; teamMembers: TeamMember[]; showAlert: (message: string, type?: 'success' | 'error') => void; }> = ({ onClose, onSubmit, taskToEdit, teamMembers, showAlert }) => {
     const { t } = useLocalization();
-    // FIX: Explicitly type the formData state to allow for an optional `id`, resolving the error when setting form data for an existing task.
     const [formData, setFormData] = useState<Omit<Task, 'id'> & { id?: string }>({ name: '', description: '', assignedTo: '', status: TaskStatus.NotStarted, startDate: '', endDate: '' });
     useEffect(() => {
         if (taskToEdit) {
             setFormData(taskToEdit);
         } else if (teamMembers.length > 0) {
-            // Set default assignee only if one isn't already set to avoid overriding user selection.
             setFormData(prev => {
                 if (prev.assignedTo) {
                     return prev;
