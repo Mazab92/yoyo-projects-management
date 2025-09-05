@@ -38,15 +38,20 @@
         extend: {
           colors: {
             primary: {
-              light: '#a5b4fc',
-              DEFAULT: '#4f46e5',
-              dark: '#4338ca',
+              light: '#60a5fa',
+              DEFAULT: '#3b82f6',
+              dark: '#2563eb',
+            },
+            emerald: {
+              light: '#6ee7b7',
+              DEFAULT: '#10b981',
+              dark: '#059669',
             },
             dark: {
               DEFAULT: '#111827',
               secondary: '#1f2937',
             },
-            light: '#f9fafb',
+            light: '#f0f9ff', // Cheerful light blue
           },
           fontFamily: {
             sans: ['Inter', 'sans-serif'],
@@ -59,6 +64,12 @@
   <style>
     body {
         font-family: 'Inter', sans-serif;
+    }
+    .bg-main {
+        background-color: #f0f9ff;
+    }
+    .dark .bg-main {
+        background-color: #111827;
     }
   </style>
 
