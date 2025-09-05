@@ -500,7 +500,6 @@ const TasksPage: React.FC<{ project: Project | null; tasks: Task[]; team: TeamMe
         </main>
     );
 };
-// Other Pages (Team, Budget, etc.) would be refactored with new styles and animations. For brevity, only showing a couple.
 const TeamPage: React.FC<{ project: Project | null; team: TeamMember[]; onNew: () => void; onEdit: (member: TeamMember) => void; onDelete: (id: string) => void; t: (key: string) => string; }> = ({ project, team, onNew, onEdit, onDelete, t }) => {
     if (!project) return <main className="flex-1 p-6 overflow-y-auto"><EmptyState title={t('noProjectSelected')} message={t('noProjectMessage')} /></main>;
     return (
@@ -518,8 +517,226 @@ const TeamPage: React.FC<{ project: Project | null; team: TeamMember[]; onNew: (
     );
 };
 
-// ... other pages like Budget, Risks, Designs, Profile, Settings, Reports would follow the same pattern of restyling and animation additions ...
-// Omitting them for brevity to focus on the main requested changes. The logic inside them remains the same. The rest of the page components from the original file would be placed here, refactored with new styles.
+const BudgetPage: React.FC<{ project: Project | null; budget: BudgetItem[]; onNew: () => void; onEdit: (item: BudgetItem) => void; onDelete: (id: string) => void; t: (key: string) => string; locale: Locale; }> = ({ project, budget, onNew, onEdit, onDelete, t, locale }) => {
+    if (!project) return <main className="flex-1 p-6 overflow-y-auto"><EmptyState title={t('noProjectSelected')} message={t('noProjectMessage')} /></main>;
+    const totalAllocated = budget.reduce((sum, item) => sum + item.allocated, 0);
+    const totalSpent = budget.reduce((sum, item) => sum + item.spent, 0);
+    return (
+        <main className="flex-1 p-6 overflow-y-auto">
+            <div className="flex items-center justify-between"> <h1 className="text-2xl font-bold text-gray-900 dark:text-white">{t('budgetTitle').replace('{projectName}', project.name)}</h1> <button onClick={onNew} className={`${btnPrimaryStyle} flex items-center`}><Plus size={16} className="mr-2"/>{t('addBudgetItem')}</button> </div>
+            {budget.length === 0 ? <EmptyState title={t('noBudget')} message={t('noBudgetMessage')} action={<button onClick={onNew} className={btnPrimaryStyle}>{t('addBudgetItem')}</button>} /> : (
+                <>
+                <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="grid grid-cols-1 gap-4 mt-6 sm:grid-cols-3">
+                    <div className="p-4 bg-white rounded-lg shadow dark:bg-dark-secondary"><p className="text-sm text-gray-500">{t('total')} {t('allocated')}</p><p className="text-2xl font-semibold">{formatCurrencyEGP(totalAllocated, locale)}</p></div>
+                    <div className="p-4 bg-white rounded-lg shadow dark:bg-dark-secondary"><p className="text-sm text-gray-500">{t('total')} {t('spent')}</p><p className="text-2xl font-semibold text-red-500">{formatCurrencyEGP(totalSpent, locale)}</p></div>
+                    <div className="p-4 bg-white rounded-lg shadow dark:bg-dark-secondary"><p className="text-sm text-gray-500">{t('remaining')}</p><p className="text-2xl font-semibold text-emerald-500">{formatCurrencyEGP(totalAllocated - totalSpent, locale)}</p></div>
+                </motion.div>
+                <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="mt-6 overflow-x-auto bg-white rounded-lg shadow dark:bg-dark-secondary">
+                <table className="w-full text-sm text-left text-gray-500 dark:text-gray-400">
+                    <thead className="text-xs text-gray-700 uppercase bg-gray-50 dark:bg-gray-700 dark:text-gray-400"> <tr><th scope="col" className="px-6 py-3">{t('category')}</th><th scope="col" className="px-6 py-3">{t('allocatedBudget')}</th><th scope="col" className="px-6 py-3">{t('spentBudget')}</th><th scope="col" className="px-6 py-3">{t('remaining')}</th><th scope="col" className="px-6 py-3"></th></tr> </thead>
+                    <motion.tbody> {budget.map((item, i) => (<motion.tr initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.05 }} key={item.id} className="bg-white border-b dark:bg-dark-secondary dark:border-gray-700"> <th scope="row" className="px-6 py-4 font-medium text-gray-900 whitespace-nowrap dark:text-white">{item.category}</th> <td className="px-6 py-4">{formatCurrencyEGP(item.allocated, locale)}</td><td className="px-6 py-4">{formatCurrencyEGP(item.spent, locale)}</td> <td className="px-6 py-4">{formatCurrencyEGP(item.allocated - item.spent, locale)}</td><td className="flex justify-end px-6 py-4 space-x-2"><button onClick={() => onEdit(item)} className="p-1 text-gray-500 hover:text-blue-600"><Edit size={16}/></button><button onClick={() => onDelete(item.id)} className="p-1 text-gray-500 hover:text-red-600"><Trash2 size={16}/></button></td> </motion.tr>))} </motion.tbody>
+                </table>
+                </motion.div>
+                </>
+            )}
+        </main>
+    );
+};
+
+const RisksPage: React.FC<{ project: Project | null; risks: Risk[]; onNew: () => void; onEdit: (risk: Risk) => void; onDelete: (id: string) => void; t: (key: string) => string; }> = ({ project, risks, onNew, onEdit, onDelete, t }) => {
+    if (!project) return <main className="flex-1 p-6 overflow-y-auto"><EmptyState title={t('noProjectSelected')} message={t('noProjectMessage')} /></main>;
+    return (
+        <main className="flex-1 p-6 overflow-y-auto">
+            <div className="flex items-center justify-between"> <h1 className="text-2xl font-bold text-gray-900 dark:text-white">{t('risksTitle').replace('{projectName}', project.name)}</h1> <button onClick={onNew} className={`${btnPrimaryStyle} flex items-center`}><Plus size={16} className="mr-2"/>{t('addRisk')}</button> </div>
+            {risks.length === 0 ? <EmptyState title={t('noRisks')} message={t('noRisksMessage')} action={<button onClick={onNew} className={btnPrimaryStyle}>{t('addRisk')}</button>} /> : (
+                <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="mt-6 overflow-x-auto bg-white rounded-lg shadow dark:bg-dark-secondary">
+                <table className="w-full text-sm text-left text-gray-500 dark:text-gray-400">
+                    <thead className="text-xs text-gray-700 uppercase bg-gray-50 dark:bg-gray-700 dark:text-gray-400"> <tr><th scope="col" className="px-6 py-3">{t('description')}</th><th scope="col" className="px-6 py-3">{t('likelihood')}</th><th scope="col" className="px-6 py-3">{t('impact')}</th><th scope="col" className="px-6 py-3">{t('mitigation')}</th><th scope="col" className="px-6 py-3"></th></tr> </thead>
+                    <motion.tbody> {risks.map((risk, i) => (<motion.tr initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.05 }} key={risk.id} className="bg-white border-b dark:bg-dark-secondary dark:border-gray-700"> <th scope="row" className="px-6 py-4 font-medium text-gray-900 whitespace-nowrap dark:text-white">{risk.description}</th> <td className="px-6 py-4">{risk.likelihood}</td><td className="px-6 py-4">{risk.impact}</td><td className="px-6 py-4">{risk.mitigation}</td> <td className="flex justify-end px-6 py-4 space-x-2"><button onClick={() => onEdit(risk)} className="p-1 text-gray-500 hover:text-blue-600"><Edit size={16}/></button><button onClick={() => onDelete(risk.id)} className="p-1 text-gray-500 hover:text-red-600"><Trash2 size={16}/></button></td> </motion.tr>))} </motion.tbody>
+                </table>
+                </motion.div>
+            )}
+        </main>
+    );
+};
+
+const DesignsPage: React.FC<{ project: Project | null; designs: Design[]; onEdit: (design: Design) => void; onDelete: (design: Design) => void; onUpload: (file: File) => void; t: (key: string) => string; locale: Locale; }> = ({ project, designs, onEdit, onDelete, onUpload, t, locale }) => {
+    const [file, setFile] = useState<File | null>(null);
+    const [uploading, setUploading] = useState(false);
+    const { addToast } = useToast();
+
+    const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        if (e.target.files && e.target.files[0]) {
+            if (e.target.files[0].type === 'image/png') {
+                setFile(e.target.files[0]);
+            } else {
+                addToast(t('pngOnlyError'), 'error');
+            }
+        }
+    };
+
+    const handleUpload = async () => {
+        if (!file) return;
+        setUploading(true);
+        try {
+            await onUpload(file);
+            addToast('Upload successful!', 'success');
+            setFile(null);
+        } catch (error) {
+            addToast(t('uploadError'), 'error');
+        } finally {
+            setUploading(false);
+        }
+    };
+    
+    if (!project) return <main className="flex-1 p-6 overflow-y-auto"><EmptyState title={t('noProjectSelected')} message={t('noProjectMessage')} /></main>;
+    return (
+        <main className="flex-1 p-6 overflow-y-auto">
+            <h1 className="text-2xl font-bold text-gray-900 dark:text-white">{t('designsTitle').replace('{projectName}', project.name)}</h1>
+            <p className="mt-1 text-sm text-gray-600 dark:text-gray-400">{t('designsMessage')}</p>
+            <div className="p-4 mt-6 bg-white rounded-lg shadow dark:bg-dark-secondary">
+                <h2 className="text-lg font-semibold">{t('uploadDesign')}</h2>
+                <div className="flex items-center mt-4 space-x-4">
+                    <label className="flex items-center px-4 py-2 space-x-2 border border-gray-300 rounded-lg cursor-pointer hover:bg-gray-50 dark:border-gray-600 dark:hover:bg-gray-700">
+                        <UploadCloud size={16} />
+                        <span>{file ? file.name : t('pngFile')}</span>
+                        <input type="file" className="hidden" onChange={handleFileChange} accept="image/png" />
+                    </label>
+                    <button onClick={handleUpload} disabled={!file || uploading} className={`${btnPrimaryStyle} disabled:opacity-50`}>
+                        {uploading ? t('uploading') : t('upload')}
+                    </button>
+                </div>
+            </div>
+
+            {designs.length === 0 ? <div className="mt-8"><EmptyState title={t('noDesigns')} message={t('noDesignsMessage')} /></div> : (
+                <div className="grid grid-cols-1 gap-6 mt-8 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
+                    <AnimatePresence>
+                    {designs.map((design, i) => (
+                        <motion.div initial={{ opacity: 0, scale: 0.8 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.8 }} transition={{ delay: i * 0.05 }} key={design.id} className="relative overflow-hidden bg-white rounded-lg shadow group dark:bg-dark-secondary">
+                            <img src={design.imageUrl} alt={design.name} className="object-cover w-full h-48" />
+                            <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-50 transition-all"></div>
+                            <div className="absolute bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-black/70 to-transparent">
+                                <p className="font-semibold text-white truncate">{design.name}</p>
+                                <p className="text-xs text-gray-300">{t('uploaded')}: {formatDateTime(design.uploadedAt, locale)}</p>
+                            </div>
+                            <div className="absolute top-2 right-2 flex space-x-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                                <button onClick={() => onEdit(design)} className="p-2 text-white bg-blue-500 rounded-full hover:bg-blue-600"><Edit size={16}/></button>
+                                <button onClick={() => onDelete(design)} className="p-2 text-white bg-red-500 rounded-full hover:bg-red-600"><Trash2 size={16}/></button>
+                            </div>
+                        </motion.div>
+                    ))}
+                    </AnimatePresence>
+                </div>
+            )}
+        </main>
+    );
+};
+
+const ReportsPage: React.FC<{ project: Project | null; t: (key: string) => string; }> = ({ project, t }) => {
+    if (!project) return <main className="flex-1 p-6 overflow-y-auto"><EmptyState title={t('noProjectSelected')} message={t('noProjectMessage')} /></main>;
+    // CSV export logic would be implemented here
+    const handleExport = () => { alert('CSV Export functionality to be implemented.'); };
+    return (
+        <main className="flex-1 p-6 overflow-y-auto">
+            <h1 className="text-2xl font-bold text-gray-900 dark:text-white">{t('reportsTitle').replace('{projectName}', project.name)}</h1>
+            <div className="p-4 mt-6 bg-white rounded-lg shadow dark:bg-dark-secondary">
+                <h2 className="text-lg font-semibold">{t('projectSummary')}</h2>
+                <p className="mt-2 text-gray-600 dark:text-gray-400">This section will contain detailed project reports and analytics.</p>
+                <button onClick={handleExport} className={`mt-4 ${btnPrimaryStyle}`}>{t('exportToCsv')}</button>
+            </div>
+        </main>
+    );
+};
+
+const SettingsPage: React.FC<{ project: Project | null; activityLogs: ActivityLog[]; t: (key: string) => string; locale: Locale; }> = ({ project, activityLogs, t, locale }) => {
+    if (!project) return <main className="flex-1 p-6 overflow-y-auto"><EmptyState title={t('noProjectSelected')} message={t('noProjectMessage')} /></main>;
+    return (
+        <main className="flex-1 p-6 overflow-y-auto">
+            <h1 className="text-2xl font-bold text-gray-900 dark:text-white">{t('settingsTitle')}</h1>
+            <div className="p-4 mt-6 bg-white rounded-lg shadow dark:bg-dark-secondary">
+                <h2 className="text-lg font-semibold">{t('activityLog')}</h2>
+                {activityLogs.length === 0 ? <p className="mt-2 text-gray-500">{t('noActivity')}</p> : (
+                    <ul className="mt-4 space-y-2">
+                        {activityLogs.map(log => (
+                            <li key={log.id} className="text-sm text-gray-600 dark:text-gray-400">
+                                <span className="font-semibold text-gray-800 dark:text-gray-200">{log.userEmail}</span> {log.action} <span className="text-xs text-gray-500">({formatDateTime(log.timestamp, locale)})</span>
+                            </li>
+                        ))}
+                    </ul>
+                )}
+            </div>
+        </main>
+    );
+};
+
+const ProfilePage: React.FC<{ user: User; t: (key: string) => string; }> = ({ user, t }) => {
+    const [myTasks, setMyTasks] = useState<Task[]>([]);
+    const [myProjects, setMyProjects] = useState<Project[]>([]);
+    const [loading, setLoading] = useState(true);
+
+    useEffect(() => {
+        const fetchUserData = async () => {
+            if (!user) return;
+            setLoading(true);
+            const allTasks: Task[] = [];
+            
+            const projectsQuery = query(collection(db, "artifacts", appId, "public", "data", "projects"), where("ownerId", "==", user.uid));
+            const projectsSnapshot = await getDocs(projectsQuery);
+            const projectsData = projectsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })) as Project[];
+            setMyProjects(projectsData);
+
+            for (const project of projectsData) {
+                const teamQuery = collection(db, "artifacts", appId, "public", "data", "projects", project.id, "team");
+                const teamSnapshot = await getDocs(teamQuery);
+                const teamMembers = teamSnapshot.docs.map(d => ({id: d.id, ...d.data()})) as TeamMember[];
+                const currentUserAsMember = teamMembers.find(m => m.email === user.email);
+
+                if (currentUserAsMember) {
+                    const tasksQuery = query(collection(db, "artifacts", appId, "public", "data", "projects", project.id, "tasks"), where("assigneeId", "==", currentUserAsMember.id));
+                    const tasksSnapshot = await getDocs(tasksQuery);
+                    tasksSnapshot.docs.forEach(doc => {
+                        allTasks.push({ id: doc.id, ...doc.data(), projectId: project.id, projectName: project.name } as Task);
+                    });
+                }
+            }
+            setMyTasks(allTasks);
+            setLoading(false);
+        };
+
+        fetchUserData();
+    }, [user]);
+
+    if (loading) return <main className="flex-1 p-6 overflow-y-auto"><div className="flex items-center justify-center flex-1"><BouncingLoader /></div></main>;
+    
+    return (
+        <main className="flex-1 p-6 overflow-y-auto">
+            <h1 className="text-2xl font-bold text-gray-900 dark:text-white">{t('profileTitle')}</h1>
+            <div className="grid grid-cols-1 gap-6 mt-6 lg:grid-cols-3">
+                <div className="p-4 bg-white rounded-lg shadow lg:col-span-2 dark:bg-dark-secondary">
+                    <h2 className="text-lg font-semibold">{t('myTasks')}</h2>
+                    {myTasks.length === 0 ? <p className="mt-2 text-gray-500">{t('noAssignedTasks')}</p> : (
+                        <ul className="mt-2 space-y-2">
+                            {myTasks.map(task => (
+                                <li key={task.id} className="p-2 border rounded-md dark:border-gray-700">
+                                    <p className="font-medium">{task.name} <span className="text-sm text-gray-500">- {task.projectName}</span></p>
+                                    <span className={`px-2 py-0.5 text-xs font-semibold rounded-full ${getStatusColor(task.status)} text-white`}>{task.status}</span>
+                                </li>
+                            ))}
+                        </ul>
+                    )}
+                </div>
+                <div className="p-4 bg-white rounded-lg shadow dark:bg-dark-secondary">
+                    <h2 className="text-lg font-semibold">{t('myProjects')}</h2>
+                    <ul className="mt-2 space-y-2">
+                        {myProjects.map(p => <li key={p.id}>{p.name}</li>)}
+                    </ul>
+                    <h2 className="mt-6 text-lg font-semibold">{t('achievements')}</h2>
+                    <p className="mt-2 text-gray-500">{t('completedProjects')}</p>
+                </div>
+            </div>
+        </main>
+    );
+};
 
 // 11. MAIN APP COMPONENT
 const App: React.FC = () => {
@@ -535,7 +752,32 @@ const App: React.FC = () => {
     const logActivity = async (action: string) => { if (!user || !selectedProjectId) return; try { await addDoc(collection(db, "artifacts", appId, "public", "data", "projects", selectedProjectId, "activity_logs"), { userEmail: user.email, action, timestamp: serverTimestamp() }); } catch (error) { console.error("Failed to log activity:", error); } };
     
     useEffect(() => { onAuthStateChanged(auth, (user) => { setUser(user); setLoadingAuth(false); }); document.documentElement.classList.toggle('dark', theme === 'dark'); document.documentElement.lang = locale; document.documentElement.dir = locale === 'ar' ? 'rtl' : 'ltr'; }, [theme, locale]);
-    useEffect(() => { if (!user) { setProjects([]); return; } const q = query(collection(db, "artifacts", appId, "public", "data", "projects"), where("ownerId", "==", user.uid)); return onSnapshot(q, (snapshot) => { const projectsData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })) as Project[]; setProjects(projectsData); if (!selectedProjectId && projectsData.length > 0) { setSelectedProjectId(projectsData[0].id); } else if (projectsData.length === 0) { setSelectedProjectId(null); } else if (selectedProjectId && !projectsData.some(p => p.id === selectedProjectId)) { setSelectedProjectId(projectsData.length > 0 ? projectsData[0].id : null); } }); }, [user, selectedProjectId]);
+    
+    // BUG FIX: Refactored project fetching to be more robust and avoid race conditions.
+    useEffect(() => {
+      if (!user) {
+        setProjects([]);
+        setSelectedProjectId(null);
+        return;
+      }
+      const q = query(collection(db, "artifacts", appId, "public", "data", "projects"), where("ownerId", "==", user.uid));
+      const unsubscribe = onSnapshot(q, (snapshot) => {
+        const projectsData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })) as Project[];
+        setProjects(projectsData);
+        setSelectedProjectId(currentId => {
+            const projectExists = projectsData.some(p => p.id === currentId);
+            if (currentId && projectExists) {
+                return currentId; // Keep the current selection if it still exists
+            }
+            if (projectsData.length > 0) {
+                return projectsData[0].id; // Otherwise, select the first project
+            }
+            return null; // Or clear selection if no projects exist
+        });
+      });
+      return () => unsubscribe();
+    }, [user]);
+
     useEffect(() => { if (!selectedProjectId) { setTasks([]); setTeam([]); setBudget([]); setRisks([]); setDesigns([]); setActivityLogs([]); return; } const subCollections = ["tasks", "team", "budget", "risks", "designs", "activity_logs"]; const setters:any = { tasks: setTasks, team: setTeam, budget: setBudget, risks: setRisks, designs: setDesigns, activity_logs: setActivityLogs }; const unsubs = subCollections.map(col => { const colQuery = col === 'activity_logs' ? query(collection(db, "artifacts", appId, "public", "data", "projects", selectedProjectId, col), orderBy("timestamp", "desc")) : collection(db, "artifacts", appId, "public", "data", "projects", selectedProjectId, col); return onSnapshot(colQuery, snapshot => { const data = snapshot.docs.map(d => ({id: d.id, ...d.data()})); setters[col](data); }); }); return () => unsubs.forEach(unsub => unsub()); }, [selectedProjectId]);
 
     const toggleTheme = () => setTheme(prev => prev === 'light' ? 'dark' : 'light'); const toggleLocale = () => setLocale(prev => prev === 'en' ? 'ar' : 'en'); const handleSignOut = () => signOut(auth);
@@ -580,7 +822,12 @@ const App: React.FC = () => {
               <Route path="/" element={<DashboardPage project={selectedProject} tasks={tasks} team={team} budget={budget} risks={risks} t={t} locale={locale} />} />
               <Route path="/tasks" element={<TasksPage project={selectedProject} tasks={tasks} team={team} onNew={() => { setEditingTask(null); setIsTaskModalOpen(true); }} onEdit={(task) => { setEditingTask(task); setIsTaskModalOpen(true); }} onDelete={(id) => handleDelete('tasks', id, tasks.find(item=>item.id===id)?.name)} t={t} locale={locale} />} />
               <Route path="/team" element={<TeamPage project={selectedProject} team={team} onNew={() => { setEditingMember(null); setIsTeamMemberModalOpen(true); }} onEdit={(member) => { setEditingMember(member); setIsTeamMemberModalOpen(true); }} onDelete={(id) => handleDelete('team', id, team.find(item=>item.id===id)?.name)} t={t} />} />
-              {/* Other routes would be here */}
+              <Route path="/budget" element={<BudgetPage project={selectedProject} budget={budget} onNew={() => { setEditingBudgetItem(null); setIsBudgetItemModalOpen(true); }} onEdit={(item) => { setEditingBudgetItem(item); setIsBudgetItemModalOpen(true); }} onDelete={(id) => handleDelete('budget', id, budget.find(item=>item.id===id)?.category)} t={t} locale={locale} />} />
+              <Route path="/risks" element={<RisksPage project={selectedProject} risks={risks} onNew={() => { setEditingRisk(null); setIsRiskModalOpen(true); }} onEdit={(risk) => { setEditingRisk(risk); setIsRiskModalOpen(true); }} onDelete={(id) => handleDelete('risks', id, risks.find(item=>item.id===id)?.description)} t={t} />} />
+              <Route path="/designs" element={<DesignsPage project={selectedProject} designs={designs} onEdit={(design) => { setEditingDesign(design); setIsDesignModalOpen(true); }} onDelete={(design) => handleDelete('designs', design, design.name)} onUpload={handleUploadDesign} t={t} locale={locale} />} />
+              <Route path="/reports" element={<ReportsPage project={selectedProject} t={t} />} />
+              <Route path="/settings" element={<SettingsPage project={selectedProject} activityLogs={activityLogs} t={t} locale={locale} />} />
+              <Route path="/profile" element={<ProfilePage user={user} t={t} />} />
               <Route path="*" element={<Navigate to="/" />} />
             </Routes>
           </DashboardLayout>
