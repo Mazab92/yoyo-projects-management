@@ -36,6 +36,7 @@ const app = !getApps().length ? initializeApp(firebaseConfig) : getApp();
 const auth = getAuth(app);
 const db = getFirestore(app);
 const storage = getStorage(app);
+const appId = firebaseConfig.projectId; // Use projectId as the identifier for the collection path
 
 // 4. INTERNATIONALIZATION (i18n)
 const translations = {
@@ -50,7 +51,8 @@ const translations = {
     "loginTitle": "ProjectHub Login", "email": "Email", "password": "Password", "logIn": "Log In",
     // Modals
     "newProject": "New Project", "editProject": "Edit Project", "projectName": "Project Name", "description": "Description", "startDate": "Start Date", "endDate": "End Date", "createProject": "Create Project", "updateProject": "Update Project",
-    "deleteProjectTitle": "Delete Project", "deleteProjectMessage": "Are you sure you want to delete this project? This action cannot be undone.",
+    "deleteProjectTitle": "Delete Project", "deleteProjectMessage": "Are you sure you want to delete this project? This will permanently delete all associated tasks, team members, budget items, risks, and designs. This action cannot be undone.",
+    "deleteItemTitle": "Confirm Deletion", "deleteItemMessage": "Are you sure? This cannot be undone.",
     "addTask": "Add Task", "editTask": "Edit Task", "taskName": "Task Name", "status": "Status", "assignee": "Assignee", "dueDate": "Due Date",
     "addTeamMember": "Add Team Member", "editTeamMember": "Edit Team Member", "memberName": "Member Name", "role": "Role",
     "addBudgetItem": "Add Budget Item", "editBudgetItem": "Edit Budget Item", "category": "Category", "allocatedBudget": "Allocated Budget", "spentBudget": "Amount Spent",
@@ -78,7 +80,8 @@ const translations = {
     "loginTitle": "تسجيل الدخول - ProjectHub", "email": "البريد الإلكتروني", "password": "كلمة المرور", "logIn": "تسجيل الدخول",
     // Modals
     "newProject": "مشروع جديد", "editProject": "تعديل المشروع", "projectName": "اسم المشروع", "description": "الوصف", "startDate": "تاريخ البدء", "endDate": "تاريخ الانتهاء", "createProject": "إنشاء مشروع", "updateProject": "تحديث المشروع",
-    "deleteProjectTitle": "حذف المشروع", "deleteProjectMessage": "هل أنت متأكد أنك تريد حذف هذا المشروع؟ لا يمكن التراجع عن هذا الإجراء.",
+    "deleteProjectTitle": "حذف المشروع", "deleteProjectMessage": "هل أنت متأكد أنك تريد حذف هذا المشروع؟ سيؤدي هذا إلى حذف جميع المهام وأعضاء الفريق وبنود الميزانية والمخاطر والتصاميم المرتبطة به بشكل دائم. لا يمكن التراجع عن هذا الإجراء.",
+    "deleteItemTitle": "تأكيد الحذف", "deleteItemMessage": "هل أنت متأكد؟ لا يمكن التراجع عن هذا الإجراء.",
     "addTask": "إضافة مهمة", "editTask": "تعديل المهمة", "taskName": "اسم المهمة", "status": "الحالة", "assignee": "المسؤول", "dueDate": "تاريخ الاستحقاق",
     "addTeamMember": "إضافة عضو للفريق", "editTeamMember": "تعديل عضو الفريق", "memberName": "اسم العضو", "role": "الدور",
     "addBudgetItem": "إضافة بند للميزانية", "editBudgetItem": "تعديل بند الميزانية", "category": "الفئة", "allocatedBudget": "الميزانية المخصصة", "spentBudget": "المبلغ المنفق",
@@ -268,7 +271,7 @@ const Header: React.FC<{ user: User | null; onSignOut: () => void; onMenuClick: 
 };
 
 // Sidebar Component
-const Sidebar: React.FC<{ projects: Project[]; selectedProjectId: string | null; onSelectProject: (id: string) => void; onNewProject: () => void; isOpen: boolean; onClose: () => void; t: (key: string) => string; }> = ({ projects, selectedProjectId, onSelectProject, onNewProject, isOpen, onClose, t }) => {
+const Sidebar: React.FC<{ projects: Project[]; selectedProjectId: string | null; onSelectProject: (id: string) => void; onNewProject: () => void; onEditProject: (project: Project) => void; onDeleteProject: (id: string) => void; isOpen: boolean; onClose: () => void; t: (key: string) => string; }> = ({ projects, selectedProjectId, onSelectProject, onNewProject, onEditProject, onDeleteProject, isOpen, onClose, t }) => {
     const navLinks = [
         { name: t('dashboard'), icon: <LayoutDashboard size={20} />, path: '/' },
         { name: t('tasks'), icon: <CheckSquare size={20} />, path: '/tasks' },
@@ -307,10 +310,16 @@ const Sidebar: React.FC<{ projects: Project[]; selectedProjectId: string | null;
                 </div>
                 <div className="mt-2 space-y-1">
                   {projects.map(project => (
-                    <motion.button key={project.id} whileHover={{ x: 2 }} onClick={() => { onSelectProject(project.id); onClose(); }}
-                      className={`w-full text-left flex items-center px-4 py-2 text-sm font-medium rounded-md ${selectedProjectId === project.id ? 'bg-primary-light text-primary-dark font-semibold' : 'text-gray-600 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700'}`}>
-                      <span className="flex-1 truncate">{project.name}</span>
-                    </motion.button>
+                    <motion.div key={project.id} whileHover={{ x: 2 }} className="relative group">
+                      <button onClick={() => { onSelectProject(project.id); onClose(); }}
+                        className={`w-full text-left flex items-center px-4 py-2 text-sm font-medium rounded-md ${selectedProjectId === project.id ? 'bg-primary-light text-primary-dark font-semibold' : 'text-gray-600 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700'}`}>
+                        <span className="flex-1 truncate">{project.name}</span>
+                      </button>
+                      <div className="absolute right-0 top-0 h-full flex items-center pr-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                          <button onClick={(e) => {e.stopPropagation(); onEditProject(project);}} className="p-1 text-gray-500 hover:text-blue-600 dark:text-gray-400 dark:hover:text-blue-400"><Edit size={14} /></button>
+                          <button onClick={(e) => {e.stopPropagation(); onDeleteProject(project.id);}} className="p-1 text-gray-500 hover:text-red-600 dark:text-gray-400 dark:hover:text-red-400"><Trash2 size={14} /></button>
+                      </div>
+                    </motion.div>
                   ))}
                 </div>
               </div>
@@ -629,7 +638,7 @@ const DesignModal: React.FC<{ isOpen: boolean; onClose: () => void; onSave: (des
 };
 
 // DashboardLayout Component
-const DashboardLayout: React.FC<{ children: React.ReactNode; user: User; projects: Project[]; selectedProjectId: string | null; onSelectProject: (id: string) => void; onNewProject: () => void; onSignOut: () => void; theme: 'light' | 'dark'; toggleTheme: () => void; locale: Locale; toggleLocale: () => void; t: (key: string) => string; }> = (props) => {
+const DashboardLayout: React.FC<{ children: React.ReactNode; user: User; projects: Project[]; selectedProjectId: string | null; onSelectProject: (id: string) => void; onNewProject: () => void; onEditProject: (project: Project) => void; onDeleteProject: (id: string) => void; onSignOut: () => void; theme: 'light' | 'dark'; toggleTheme: () => void; locale: Locale; toggleLocale: () => void; t: (key: string) => string; }> = (props) => {
     const [isSidebarOpen, setSidebarOpen] = useState(false);
     return (
         <div className="flex h-screen overflow-hidden bg-light dark:bg-dark">
@@ -679,9 +688,9 @@ const TasksPage: React.FC<{ project: Project | null; tasks: Task[]; onNew: () =>
         <main className="flex-1 p-6 overflow-y-auto bg-light dark:bg-dark">
             <div className="flex items-center justify-between">
                 <h1 className="text-2xl font-bold text-gray-900 dark:text-white">{t('tasksTitle').replace('{projectName}', project.name)}</h1>
-                <button onClick={onNew} className="btn-primary flex items-center"><Plus size={16} className="mr-2"/>{t('addTask')}</button>
+                <button onClick={onNew} className="btn-primary flex items-center dark:bg-primary dark:hover:bg-primary-dark"><Plus size={16} className="mr-2"/>{t('addTask')}</button>
             </div>
-            {tasks.length === 0 ? <EmptyState title={t('noTasks')} message={t('noTasksMessage')} /> : (
+            {tasks.length === 0 ? <EmptyState title={t('noTasks')} message={t('noTasksMessage')} action={<button onClick={onNew} className="btn-primary">{t('addTask')}</button>} /> : (
                 <div className="mt-6 space-y-4">
                 {tasks.map(task => (
                     <div key={task.id} className="p-4 bg-white rounded-lg shadow dark:bg-dark-secondary">
@@ -714,9 +723,9 @@ const TeamPage: React.FC<{ project: Project | null; team: TeamMember[]; onNew: (
         <main className="flex-1 p-6 overflow-y-auto bg-light dark:bg-dark">
             <div className="flex items-center justify-between">
                 <h1 className="text-2xl font-bold text-gray-900 dark:text-white">{t('teamTitle').replace('{projectName}', project.name)}</h1>
-                <button onClick={onNew} className="btn-primary flex items-center"><Plus size={16} className="mr-2"/>{t('addTeamMember')}</button>
+                <button onClick={onNew} className="btn-primary flex items-center dark:bg-primary dark:hover:bg-primary-dark"><Plus size={16} className="mr-2"/>{t('addTeamMember')}</button>
             </div>
-            {team.length === 0 ? <EmptyState title={t('noTeam')} message={t('noTeamMessage')} /> : (
+            {team.length === 0 ? <EmptyState title={t('noTeam')} message={t('noTeamMessage')} action={<button onClick={onNew} className="btn-primary">{t('addTeamMember')}</button>} /> : (
                 <div className="mt-6 overflow-x-auto bg-white rounded-lg shadow dark:bg-dark-secondary">
                 <table className="w-full text-sm text-left text-gray-500 dark:text-gray-400">
                     <thead className="text-xs text-gray-700 uppercase bg-gray-50 dark:bg-gray-700 dark:text-gray-400">
@@ -745,9 +754,9 @@ const BudgetPage: React.FC<{ project: Project | null; budget: BudgetItem[]; onNe
         <main className="flex-1 p-6 overflow-y-auto bg-light dark:bg-dark">
             <div className="flex items-center justify-between">
                 <h1 className="text-2xl font-bold text-gray-900 dark:text-white">{t('budgetTitle').replace('{projectName}', project.name)}</h1>
-                <button onClick={onNew} className="btn-primary flex items-center"><Plus size={16} className="mr-2"/>{t('addBudgetItem')}</button>
+                <button onClick={onNew} className="btn-primary flex items-center dark:bg-primary dark:hover:bg-primary-dark"><Plus size={16} className="mr-2"/>{t('addBudgetItem')}</button>
             </div>
-            {budget.length === 0 ? <EmptyState title={t('noBudget')} message={t('noBudgetMessage')} /> : (
+            {budget.length === 0 ? <EmptyState title={t('noBudget')} message={t('noBudgetMessage')} action={<button onClick={onNew} className="btn-primary">{t('addBudgetItem')}</button>} /> : (
                 <div className="mt-6 overflow-x-auto bg-white rounded-lg shadow dark:bg-dark-secondary">
                 <table className="w-full text-sm text-left text-gray-500 dark:text-gray-400">
                     <thead className="text-xs text-gray-700 uppercase bg-gray-50 dark:bg-gray-700 dark:text-gray-400">
@@ -777,9 +786,9 @@ const RisksPage: React.FC<{ project: Project | null; risks: Risk[]; onNew: () =>
         <main className="flex-1 p-6 overflow-y-auto bg-light dark:bg-dark">
             <div className="flex items-center justify-between">
                 <h1 className="text-2xl font-bold text-gray-900 dark:text-white">{t('risksTitle').replace('{projectName}', project.name)}</h1>
-                <button onClick={onNew} className="btn-primary flex items-center"><Plus size={16} className="mr-2"/>{t('addRisk')}</button>
+                <button onClick={onNew} className="btn-primary flex items-center dark:bg-primary dark:hover:bg-primary-dark"><Plus size={16} className="mr-2"/>{t('addRisk')}</button>
             </div>
-            {risks.length === 0 ? <EmptyState title={t('noRisks')} message={t('noRisksMessage')} /> : (
+            {risks.length === 0 ? <EmptyState title={t('noRisks')} message={t('noRisksMessage')} action={<button onClick={onNew} className="btn-primary">{t('addRisk')}</button>} /> : (
                 <div className="mt-6 overflow-x-auto bg-white rounded-lg shadow dark:bg-dark-secondary">
                 <table className="w-full text-sm text-left text-gray-500 dark:text-gray-400">
                     <thead className="text-xs text-gray-700 uppercase bg-gray-50 dark:bg-gray-700 dark:text-gray-400">
@@ -890,7 +899,7 @@ const ProfilePage: React.FC<{ user: User; projects: Project[]; t: (key: string) 
             setLoading(true);
             const allTasks: Task[] = [];
             for (const project of projects) {
-                const q = query(collection(db, "projects", project.id, "tasks"), where("assigneeId", "==", user.uid));
+                const q = query(collection(db, "artifacts", appId, "public", "data", "projects", project.id, "tasks"), where("assigneeId", "==", user.uid));
                 const querySnapshot = await getDocs(q);
                 querySnapshot.forEach(doc => {
                     allTasks.push({ id: doc.id, ...doc.data(), projectId: project.id, projectName: project.name } as Task);
@@ -969,7 +978,7 @@ const App: React.FC = () => {
     const [editingDesign, setEditingDesign] = useState<Design | null>(null);
     
     // Deletion State
-    const [itemToDelete, setItemToDelete] = useState<{ type: string; id: string } | null>(null);
+    const [itemToDelete, setItemToDelete] = useState<{ type: string; id: string | Design } | null>(null);
     
     // i18n function
     const t = (key: string) => translations[locale][key] || key;
@@ -984,24 +993,32 @@ const App: React.FC = () => {
 
     useEffect(() => {
         if (!user) { setProjects([]); return; }
-        const q = query(collection(db, "projects"), where("ownerId", "==", user.uid));
+        const q = query(collection(db, "artifacts", appId, "public", "data", "projects"), where("ownerId", "==", user.uid));
         return onSnapshot(q, (snapshot) => {
             const projectsData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })) as Project[];
             setProjects(projectsData);
-            if (!selectedProjectId && projectsData.length > 0) setSelectedProjectId(projectsData[0].id);
-            else if (projectsData.length === 0) setSelectedProjectId(null);
+            if (!selectedProjectId && projectsData.length > 0) {
+                setSelectedProjectId(projectsData[0].id);
+            } else if (projectsData.length === 0) {
+                setSelectedProjectId(null);
+            } else if (selectedProjectId && !projectsData.some(p => p.id === selectedProjectId)) {
+                // If the selected project was deleted, select the first one or null
+                setSelectedProjectId(projectsData.length > 0 ? projectsData[0].id : null);
+            }
         });
     }, [user, selectedProjectId]);
     
     useEffect(() => {
         if (!selectedProjectId) { setTasks([]); setTeam([]); setBudget([]); setRisks([]); setDesigns([]); return; }
-        const unsubs = [
-            onSnapshot(collection(db, "projects", selectedProjectId, "tasks"), s => setTasks(s.docs.map(d => ({id: d.id, ...d.data()})) as Task[])),
-            onSnapshot(collection(db, "projects", selectedProjectId, "team"), s => setTeam(s.docs.map(d => ({id: d.id, ...d.data()})) as TeamMember[])),
-            onSnapshot(collection(db, "projects", selectedProjectId, "budget"), s => setBudget(s.docs.map(d => ({id: d.id, ...d.data()})) as BudgetItem[])),
-            onSnapshot(collection(db, "projects", selectedProjectId, "risks"), s => setRisks(s.docs.map(d => ({id: d.id, ...d.data()})) as Risk[])),
-            onSnapshot(collection(db, "projects", selectedProjectId, "designs"), s => setDesigns(s.docs.map(d => ({id: d.id, ...d.data()})) as Design[])),
-        ];
+        const subCollections = ["tasks", "team", "budget", "risks", "designs"];
+        const setters:any = { tasks: setTasks, team: setTeam, budget: setBudget, risks: setRisks, designs: setDesigns };
+
+        const unsubs = subCollections.map(col => 
+            onSnapshot(collection(db, "artifacts", appId, "public", "data", "projects", selectedProjectId, col), snapshot => {
+                const data = snapshot.docs.map(d => ({id: d.id, ...d.data()}));
+                setters[col](data);
+            })
+        );
         return () => unsubs.forEach(unsub => unsub());
     }, [selectedProjectId]);
 
@@ -1013,28 +1030,63 @@ const App: React.FC = () => {
     const handleSave = async (type: string, data: any) => {
         if (!user || !selectedProjectId) return;
         const { id, ...payload } = data;
-        if (id) {
-            await updateDoc(doc(db, "projects", selectedProjectId, type, id), payload);
-        } else {
-            await addDoc(collection(db, "projects", selectedProjectId, type), payload);
+        const collectionPath = ["artifacts", appId, "public", "data", "projects", selectedProjectId, type];
+        try {
+            if (id) {
+                await updateDoc(doc(db, ...collectionPath, id), payload);
+            } else {
+                await addDoc(collection(db, ...collectionPath), payload);
+            }
+        } catch (error) {
+            console.error("Error saving item:", error);
         }
     };
     
     const handleSaveProject = async (projectData: any) => {
         if (!user) return;
         const { id, ...payload } = projectData;
+        const projectsPath = ["artifacts", appId, "public", "data", "projects"];
         if (id) {
-            await updateDoc(doc(db, "projects", id), payload);
+            await updateDoc(doc(db, ...projectsPath, id), payload);
         } else {
-            await addDoc(collection(db, "projects"), { ...payload, ownerId: user.uid });
+            const newDocRef = await addDoc(collection(db, ...projectsPath), { ...payload, ownerId: user.uid });
+            setSelectedProjectId(newDocRef.id);
         }
     };
+    
+    const handleEditProject = (project: Project) => {
+      setEditingProject(project);
+      setIsNewProjectModalOpen(true);
+    };
 
-    const handleDelete = (type: string, id: string) => { setItemToDelete({ type, id }); setIsConfirmModalOpen(true); };
+    const handleDelete = (type: string, id: string | Design) => { setItemToDelete({ type, id }); setIsConfirmModalOpen(true); };
+    
     const confirmDelete = async () => {
-        if (itemToDelete && selectedProjectId) {
-            await deleteDoc(doc(db, "projects", selectedProjectId, itemToDelete.type, itemToDelete.id));
+        if (!itemToDelete) return;
+
+        const { type, id } = itemToDelete;
+
+        if (type === 'project' && typeof id === 'string') {
+            const subCollections = ['tasks', 'team', 'budget', 'risks', 'designs'];
+            const batch = writeBatch(db);
+
+            for (const subCollection of subCollections) {
+                const subCollectionRef = collection(db, "artifacts", appId, "public", "data", "projects", id, subCollection);
+                const snapshot = await getDocs(subCollectionRef);
+                snapshot.docs.forEach(doc => batch.delete(doc.ref));
+            }
+            batch.delete(doc(db, "artifacts", appId, "public", "data", "projects", id));
+            await batch.commit();
+
+        } else if (selectedProjectId && typeof id === 'string') {
+            const collectionPath = ["artifacts", appId, "public", "data", "projects", selectedProjectId, type];
+            await deleteDoc(doc(db, ...collectionPath, id));
+        } else if (type === 'designs' && typeof id === 'object' && selectedProjectId) {
+            const design = id as Design;
+            await deleteObject(ref(storage, design.storagePath));
+            await deleteDoc(doc(db, "artifacts", appId, "public", "data", "projects", selectedProjectId, "designs", design.id));
         }
+        
         setItemToDelete(null);
         setIsConfirmModalOpen(false);
     };
@@ -1045,36 +1097,30 @@ const App: React.FC = () => {
         const storageRef = ref(storage, storagePath);
         await uploadBytes(storageRef, file);
         const downloadURL = await getDownloadURL(storageRef);
-        await addDoc(collection(db, "projects", selectedProjectId, "designs"), {
+        await addDoc(collection(db, "artifacts", appId, "public", "data", "projects", selectedProjectId, "designs"), {
             name: file.name, imageUrl: downloadURL, storagePath: storagePath, uploadedAt: serverTimestamp()
         });
     };
 
-    const handleDeleteDesign = async (design: Design) => {
-        if (!selectedProjectId) return;
-        await deleteObject(ref(storage, design.storagePath));
-        await deleteDoc(doc(db, "projects", selectedProjectId, "designs", design.id));
-    };
-    
     const handleSaveDesignName = async (design: Pick<Design, 'id'|'name'>) => {
-        if (selectedProjectId) await updateDoc(doc(db, "projects", selectedProjectId, "designs", design.id), { name: design.name });
+        if (selectedProjectId) await updateDoc(doc(db, "artifacts", appId, "public", "data", "projects", selectedProjectId, "designs", design.id), { name: design.name });
     };
 
     const selectedProject = projects.find(p => p.id === selectedProjectId) || null;
 
     if (loadingAuth) return <div className="flex items-center justify-center h-screen bg-light dark:bg-dark"><SkeletonLoader /></div>;
-    if (!user) return <LoginPage />;
+    if (!user) return <LoginPage t={t} />;
   
     return (
         <BrowserRouter>
-          <DashboardLayout user={user} projects={projects} selectedProjectId={selectedProjectId} onSelectProject={setSelectedProjectId} onNewProject={() => { setEditingProject(null); setIsNewProjectModalOpen(true); }} onSignOut={handleSignOut} theme={theme} toggleTheme={toggleTheme} locale={locale} toggleLocale={toggleLocale} t={t}>
+          <DashboardLayout user={user} projects={projects} selectedProjectId={selectedProjectId} onSelectProject={setSelectedProjectId} onNewProject={() => { setEditingProject(null); setIsNewProjectModalOpen(true); }} onEditProject={handleEditProject} onDeleteProject={(id) => handleDelete('project', id)} onSignOut={handleSignOut} theme={theme} toggleTheme={toggleTheme} locale={locale} toggleLocale={toggleLocale} t={t}>
             <Routes>
               <Route path="/" element={<DashboardPage project={selectedProject} tasks={tasks} team={team} budget={budget} risks={risks} t={t} locale={locale} />} />
               <Route path="/tasks" element={<TasksPage project={selectedProject} tasks={tasks} onNew={() => { setEditingTask(null); setIsTaskModalOpen(true); }} onEdit={(task) => { setEditingTask(task); setIsTaskModalOpen(true); }} onDelete={(id) => handleDelete('tasks', id)} t={t} locale={locale} />} />
               <Route path="/team" element={<TeamPage project={selectedProject} team={team} onNew={() => { setEditingMember(null); setIsTeamMemberModalOpen(true); }} onEdit={(member) => { setEditingMember(member); setIsTeamMemberModalOpen(true); }} onDelete={(id) => handleDelete('team', id)} t={t} />} />
               <Route path="/budget" element={<BudgetPage project={selectedProject} budget={budget} onNew={() => { setEditingBudgetItem(null); setIsBudgetItemModalOpen(true); }} onEdit={(item) => { setEditingBudgetItem(item); setIsBudgetItemModalOpen(true); }} onDelete={(id) => handleDelete('budget', id)} t={t} locale={locale} />} />
               <Route path="/risks" element={<RisksPage project={selectedProject} risks={risks} onNew={() => { setEditingRisk(null); setIsRiskModalOpen(true); }} onEdit={(risk) => { setEditingRisk(risk); setIsRiskModalOpen(true); }} onDelete={(id) => handleDelete('risks', id)} t={t} />} />
-              <Route path="/designs" element={<DesignsPage project={selectedProject} designs={designs} onDelete={handleDeleteDesign} onUpload={handleUploadDesign} onEdit={(design) => { setEditingDesign(design); setIsDesignModalOpen(true); }} t={t} locale={locale} />} />
+              <Route path="/designs" element={<DesignsPage project={selectedProject} designs={designs} onDelete={(design) => handleDelete('designs', design)} onUpload={handleUploadDesign} onEdit={(design) => { setEditingDesign(design); setIsDesignModalOpen(true); }} t={t} locale={locale} />} />
               <Route path="/profile" element={<ProfilePage user={user} projects={projects} t={t} locale={locale} />} />
               <Route path="*" element={<Navigate to="/" />} />
             </Routes>
@@ -1087,13 +1133,13 @@ const App: React.FC = () => {
           <BudgetItemModal isOpen={isBudgetItemModalOpen} onClose={() => setIsBudgetItemModalOpen(false)} onSave={(data) => handleSave('budget', data)} editingItem={editingBudgetItem} t={t} />
           <RiskModal isOpen={isRiskModalOpen} onClose={() => setIsRiskModalOpen(false)} onSave={(data) => handleSave('risks', data)} editingRisk={editingRisk} t={t} />
           <DesignModal isOpen={isDesignModalOpen} onClose={() => setIsDesignModalOpen(false)} onSave={handleSaveDesignName} editingDesign={editingDesign} t={t} />
-          <ConfirmationModal isOpen={isConfirmModalOpen} onClose={() => setIsConfirmModalOpen(false)} onConfirm={confirmDelete} title="Confirm Deletion" message="Are you sure? This cannot be undone." t={t} />
+          <ConfirmationModal isOpen={isConfirmModalOpen} onClose={() => setIsConfirmModalOpen(false)} onConfirm={confirmDelete} title={itemToDelete?.type === 'project' ? t('deleteProjectTitle') : t('deleteItemTitle')} message={itemToDelete?.type === 'project' ? t('deleteProjectMessage') : t('deleteItemMessage')} t={t} />
         </BrowserRouter>
     );
 };
 
 // LoginPage Component
-const LoginPage: React.FC = () => {
+const LoginPage: React.FC<{t: (key: string) => string}> = ({ t }) => {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [error, setError] = useState('');
@@ -1106,18 +1152,18 @@ const LoginPage: React.FC = () => {
     return (
         <div className="flex items-center justify-center min-h-screen bg-light dark:bg-dark">
             <div className="w-full max-w-sm p-8 space-y-6 bg-white rounded-lg shadow-md dark:bg-dark-secondary">
-                <h1 className="text-2xl font-bold text-center text-primary">{translations.en.loginTitle}</h1>
+                <h1 className="text-2xl font-bold text-center text-primary">{t('loginTitle')}</h1>
                 <form onSubmit={handleLogin} className="space-y-6">
                     <div>
-                        <label htmlFor="email" className="text-sm font-bold text-gray-600 dark:text-gray-300">{translations.en.email}</label>
+                        <label htmlFor="email" className="text-sm font-bold text-gray-600 dark:text-gray-300">{t('email')}</label>
                         <input id="email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} className="w-full p-2 mt-1 border border-gray-300 rounded dark:bg-gray-700 dark:border-gray-600 dark:text-white" required />
                     </div>
                     <div>
-                        <label htmlFor="password"className="text-sm font-bold text-gray-600 dark:text-gray-300">{translations.en.password}</label>
+                        <label htmlFor="password"className="text-sm font-bold text-gray-600 dark:text-gray-300">{t('password')}</label>
                         <input id="password" type="password" value={password} onChange={(e) => setPassword(e.target.value)} className="w-full p-2 mt-1 border border-gray-300 rounded dark:bg-gray-700 dark:border-gray-600 dark:text-white" required />
                     </div>
                     {error && <p className="text-sm text-red-500">{error}</p>}
-                    <button type="submit" className="w-full py-2 text-white rounded bg-primary hover:bg-primary-dark">{translations.en.logIn}</button>
+                    <button type="submit" className="w-full py-2 text-white rounded bg-primary hover:bg-primary-dark">{t('logIn')}</button>
                 </form>
             </div>
         </div>
