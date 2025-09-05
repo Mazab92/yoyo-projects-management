@@ -7,7 +7,7 @@ import { BrowserRouter, Routes, Route, Navigate, NavLink, Link } from 'react-rou
 import { initializeApp, getApps, getApp } from 'firebase/app';
 import { getAuth, onAuthStateChanged, signInWithEmailAndPassword, signOut, User } from 'firebase/auth';
 import { 
-    getFirestore, collection, onSnapshot, doc, addDoc, updateDoc, deleteDoc, query, where, writeBatch, serverTimestamp, getDocs
+    getFirestore, collection, onSnapshot, doc, addDoc, updateDoc, deleteDoc, query, where, writeBatch, serverTimestamp, getDocs, orderBy
 } from 'firebase/firestore';
 import { getStorage, ref, uploadBytes, getDownloadURL, deleteObject } from 'firebase/storage';
 import { 
@@ -26,7 +26,7 @@ const firebaseConfig = {
   apiKey: "AIzaSyCr6zvT7MqzlLGylTUvWlWfJudgi_nFCos",
   authDomain: "yoyo-projects-management.firebaseapp.com",
   projectId: "yoyo-projects-management",
-  storageBucket: "yoyo-projects-management.appspot.com",
+  storageBucket: "yoyo-projects-management.firebasestorage.app", // Corrected storage bucket URL
   messagingSenderId: "314270688402",
   appId: "1:314270688402:web:4dbe40616d4732d444724b",
   measurementId: "G-9YHY63624V"
@@ -44,7 +44,7 @@ const translations = {
     // General
     "save": "Save", "cancel": "Cancel", "delete": "Delete", "confirm": "Confirm", "edit": "Edit", "add": "Add",
     // Sidebar
-    "dashboard": "Dashboard", "tasks": "Tasks", "team": "Team", "budget": "Budget", "risks": "Risks", "designs": "Designs", "projects": "Projects",
+    "dashboard": "Dashboard", "tasks": "Tasks", "team": "Team", "budget": "Budget", "risks": "Risks", "designs": "Designs", "projects": "Projects", "settings": "Settings", "reports": "Reports",
     // Header
     "signOut": "Sign Out", "profile": "Profile",
     // Login
@@ -68,12 +68,14 @@ const translations = {
     "risksTitle": "Risks for {projectName}", "noRisks": "No Risks Identified", "noRisksMessage": "Add potential risks to your project.",
     "designsTitle": "Designs for {projectName}", "designsMessage": "Upload and manage design assets for your project.", "uploadDesign": "Upload New Design", "pngFile": "PNG File", "upload": "Upload", "uploading": "Uploading...", "pngOnlyError": "Only PNG files are allowed.", "uploadError": "File upload failed. Please try again.", "noDesigns": "No Designs Yet", "noDesignsMessage": "Upload your first design using the form above.", "uploaded": "Uploaded",
     "profileTitle": "User Profile", "myTasks": "My Assigned Tasks", "myProjects": "My Projects", "achievements": "Achievements", "noAssignedTasks": "You have no tasks assigned to you.", "completedProjects": "Completed 5 projects.",
+    "settingsTitle": "Settings & Activity Log", "activityLog": "Activity Log", "noActivity": "No activity recorded yet.",
+    "reportsTitle": "Reports for {projectName}", "projectSummary": "Project Summary", "exportToCsv": "Export to CSV",
   },
   ar: {
     // General
     "save": "حفظ", "cancel": "إلغاء", "delete": "حذف", "confirm": "تأكيد", "edit": "تعديل", "add": "إضافة",
     // Sidebar
-    "dashboard": "لوحة التحكم", "tasks": "المهام", "team": "الفريق", "budget": "الميزانية", "risks": "المخاطر", "designs": "التصاميم", "projects": "المشاريع",
+    "dashboard": "لوحة التحكم", "tasks": "المهام", "team": "الفريق", "budget": "الميزانية", "risks": "المخاطر", "designs": "التصاميم", "projects": "المشاريع", "settings": "الإعدادات", "reports": "التقارير",
     // Header
     "signOut": "تسجيل الخروج", "profile": "الملف الشخصي",
     // Login
@@ -97,6 +99,8 @@ const translations = {
     "risksTitle": "مخاطر مشروع {projectName}", "noRisks": "لم يتم تحديد مخاطر", "noRisksMessage": "أضف المخاطر المحتملة لمشروعك.",
     "designsTitle": "تصاميم مشروع {projectName}", "designsMessage": "قم برفع وإدارة أصول التصميم لمشروعك.", "uploadDesign": "رفع تصميم جديد", "pngFile": "ملف PNG", "upload": "رفع", "uploading": "جاري الرفع...", "pngOnlyError": "يُسمح فقط بملفات PNG.", "uploadError": "فشل رفع الملف. يرجى المحاولة مرة أخرى.", "noDesigns": "لا توجد تصاميم بعد", "noDesignsMessage": "قم برفع تصميمك الأول باستخدام النموذج أعلاه.", "uploaded": "تم الرفع",
     "profileTitle": "الملف الشخصي للمستخدم", "myTasks": "المهام المسندة إلي", "myProjects": "مشاريعي", "achievements": "الإنجازات", "noAssignedTasks": "ليس لديك مهام مسندة إليك.", "completedProjects": "أكمل 5 مشاريع.",
+    "settingsTitle": "الإعدادات وسجل النشاط", "activityLog": "سجل النشاط", "noActivity": "لم يتم تسجيل أي نشاط بعد.",
+    "reportsTitle": "تقارير مشروع {projectName}", "projectSummary": "ملخص المشروع", "exportToCsv": "تصدير إلى CSV",
   }
 };
 
@@ -156,10 +160,23 @@ export interface Design {
   uploadedAt: any; // Firestore Timestamp
 }
 
+export interface ActivityLog {
+  id: string;
+  userEmail: string;
+  action: string;
+  timestamp: any; // Firestore Timestamp
+}
+
 // 6. HELPER FUNCTIONS
 export const formatDate = (dateString: string, locale: Locale): string => {
   const options: Intl.DateTimeFormatOptions = { year: 'numeric', month: 'long', day: 'numeric' };
   return new Date(dateString).toLocaleDateString(locale === 'ar' ? 'ar-EG' : 'en-US', options);
+};
+
+export const formatDateTime = (timestamp: any, locale: Locale): string => {
+  if (!timestamp?.toDate) return '';
+  const options: Intl.DateTimeFormatOptions = { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' };
+  return timestamp.toDate().toLocaleString(locale === 'ar' ? 'ar-EG' : 'en-US', options);
 };
 
 export const getStatusColor = (status: string): string => {
@@ -279,6 +296,8 @@ const Sidebar: React.FC<{ projects: Project[]; selectedProjectId: string | null;
         { name: t('budget'), icon: <DollarSign size={20} />, path: '/budget' },
         { name: t('risks'), icon: <AlertTriangle size={20} />, path: '/risks' },
         { name: t('designs'), icon: <Image size={20} />, path: '/designs' },
+        { name: t('reports'), icon: <FileText size={20} />, path: '/reports' },
+        { name: t('settings'), icon: <Settings size={20} />, path: '/settings' },
     ];
     return (
         <>
@@ -688,7 +707,7 @@ const TasksPage: React.FC<{ project: Project | null; tasks: Task[]; onNew: () =>
         <main className="flex-1 p-6 overflow-y-auto bg-light dark:bg-dark">
             <div className="flex items-center justify-between">
                 <h1 className="text-2xl font-bold text-gray-900 dark:text-white">{t('tasksTitle').replace('{projectName}', project.name)}</h1>
-                <button onClick={onNew} className="btn-primary flex items-center dark:bg-primary dark:hover:bg-primary-dark"><Plus size={16} className="mr-2"/>{t('addTask')}</button>
+                <button onClick={onNew} className="btn-primary flex items-center dark:bg-primary dark:hover:bg-primary-dark dark:text-white"><Plus size={16} className="mr-2"/>{t('addTask')}</button>
             </div>
             {tasks.length === 0 ? <EmptyState title={t('noTasks')} message={t('noTasksMessage')} action={<button onClick={onNew} className="btn-primary">{t('addTask')}</button>} /> : (
                 <div className="mt-6 space-y-4">
@@ -723,7 +742,7 @@ const TeamPage: React.FC<{ project: Project | null; team: TeamMember[]; onNew: (
         <main className="flex-1 p-6 overflow-y-auto bg-light dark:bg-dark">
             <div className="flex items-center justify-between">
                 <h1 className="text-2xl font-bold text-gray-900 dark:text-white">{t('teamTitle').replace('{projectName}', project.name)}</h1>
-                <button onClick={onNew} className="btn-primary flex items-center dark:bg-primary dark:hover:bg-primary-dark"><Plus size={16} className="mr-2"/>{t('addTeamMember')}</button>
+                <button onClick={onNew} className="btn-primary flex items-center dark:bg-primary dark:hover:bg-primary-dark dark:text-white"><Plus size={16} className="mr-2"/>{t('addTeamMember')}</button>
             </div>
             {team.length === 0 ? <EmptyState title={t('noTeam')} message={t('noTeamMessage')} action={<button onClick={onNew} className="btn-primary">{t('addTeamMember')}</button>} /> : (
                 <div className="mt-6 overflow-x-auto bg-white rounded-lg shadow dark:bg-dark-secondary">
@@ -754,7 +773,7 @@ const BudgetPage: React.FC<{ project: Project | null; budget: BudgetItem[]; onNe
         <main className="flex-1 p-6 overflow-y-auto bg-light dark:bg-dark">
             <div className="flex items-center justify-between">
                 <h1 className="text-2xl font-bold text-gray-900 dark:text-white">{t('budgetTitle').replace('{projectName}', project.name)}</h1>
-                <button onClick={onNew} className="btn-primary flex items-center dark:bg-primary dark:hover:bg-primary-dark"><Plus size={16} className="mr-2"/>{t('addBudgetItem')}</button>
+                <button onClick={onNew} className="btn-primary flex items-center dark:bg-primary dark:hover:bg-primary-dark dark:text-white"><Plus size={16} className="mr-2"/>{t('addBudgetItem')}</button>
             </div>
             {budget.length === 0 ? <EmptyState title={t('noBudget')} message={t('noBudgetMessage')} action={<button onClick={onNew} className="btn-primary">{t('addBudgetItem')}</button>} /> : (
                 <div className="mt-6 overflow-x-auto bg-white rounded-lg shadow dark:bg-dark-secondary">
@@ -786,7 +805,7 @@ const RisksPage: React.FC<{ project: Project | null; risks: Risk[]; onNew: () =>
         <main className="flex-1 p-6 overflow-y-auto bg-light dark:bg-dark">
             <div className="flex items-center justify-between">
                 <h1 className="text-2xl font-bold text-gray-900 dark:text-white">{t('risksTitle').replace('{projectName}', project.name)}</h1>
-                <button onClick={onNew} className="btn-primary flex items-center dark:bg-primary dark:hover:bg-primary-dark"><Plus size={16} className="mr-2"/>{t('addRisk')}</button>
+                <button onClick={onNew} className="btn-primary flex items-center dark:bg-primary dark:hover:bg-primary-dark dark:text-white"><Plus size={16} className="mr-2"/>{t('addRisk')}</button>
             </div>
             {risks.length === 0 ? <EmptyState title={t('noRisks')} message={t('noRisksMessage')} action={<button onClick={onNew} className="btn-primary">{t('addRisk')}</button>} /> : (
                 <div className="mt-6 overflow-x-auto bg-white rounded-lg shadow dark:bg-dark-secondary">
@@ -895,15 +914,23 @@ const ProfilePage: React.FC<{ user: User; projects: Project[]; t: (key: string) 
 
     useEffect(() => {
         const fetchTasks = async () => {
-            if (!user) return;
+            if (!user || !user.email) return;
             setLoading(true);
             const allTasks: Task[] = [];
             for (const project of projects) {
-                const q = query(collection(db, "artifacts", appId, "public", "data", "projects", project.id, "tasks"), where("assigneeId", "==", user.uid));
-                const querySnapshot = await getDocs(q);
-                querySnapshot.forEach(doc => {
-                    allTasks.push({ id: doc.id, ...doc.data(), projectId: project.id, projectName: project.name } as Task);
-                });
+                // Step 1: Find the team member document ID for the current user in this project
+                const teamQuery = query(collection(db, "artifacts", appId, "public", "data", "projects", project.id, "team"), where("email", "==", user.email));
+                const teamSnapshot = await getDocs(teamQuery);
+                
+                if (!teamSnapshot.empty) {
+                    const teamMemberDocId = teamSnapshot.docs[0].id;
+                    // Step 2: Query tasks assigned to this team member document ID
+                    const tasksQuery = query(collection(db, "artifacts", appId, "public", "data", "projects", project.id, "tasks"), where("assigneeId", "==", teamMemberDocId));
+                    const tasksSnapshot = await getDocs(tasksQuery);
+                    tasksSnapshot.forEach(doc => {
+                        allTasks.push({ id: doc.id, ...doc.data(), projectId: project.id, projectName: project.name } as Task);
+                    });
+                }
             }
             setAssignedTasks(allTasks);
             setLoading(false);
@@ -932,7 +959,7 @@ const ProfilePage: React.FC<{ user: User; projects: Project[]; t: (key: string) 
                 <div className="p-4 bg-white rounded-lg shadow-md dark:bg-dark-secondary">
                     <h2 className="text-lg font-semibold">{t('myProjects')}</h2>
                     <ul className="mt-2 space-y-2">
-                        {projects.map(p => <li key={p.id}>{p.name}</li>)}
+                        {projects.filter(p => p.ownerId === user.uid).map(p => <li key={p.id}>{p.name}</li>)}
                     </ul>
                     <h2 className="mt-6 text-lg font-semibold">{t('achievements')}</h2>
                     <p className="mt-2 text-sm">{t('completedProjects')}</p>
@@ -941,6 +968,72 @@ const ProfilePage: React.FC<{ user: User; projects: Project[]; t: (key: string) 
         </main>
     );
 };
+
+// Settings Page
+const SettingsPage: React.FC<{ project: Project | null; activityLogs: ActivityLog[]; t: (key: string) => string; locale: Locale; }> = ({ project, activityLogs, t, locale }) => {
+    if (!project) return <main className="flex-1 p-6 overflow-y-auto bg-light dark:bg-dark"><EmptyState title={t('noProjectSelected')} message={t('noProjectMessage')} /></main>;
+    return (
+        <main className="flex-1 p-6 overflow-y-auto bg-light dark:bg-dark">
+            <h1 className="text-2xl font-bold text-gray-900 dark:text-white">{t('settingsTitle')}</h1>
+            <div className="p-4 mt-6 bg-white rounded-lg shadow-md dark:bg-dark-secondary">
+                <h2 className="text-lg font-semibold">{t('activityLog')}</h2>
+                {activityLogs.length === 0 ? <p className="mt-2 text-sm text-gray-500">{t('noActivity')}</p> : (
+                    <ul className="mt-4 space-y-2">
+                        {activityLogs.map(log => (
+                            <li key={log.id} className="p-2 text-sm border-b dark:border-gray-700">
+                                <span className="font-semibold text-primary">{log.userEmail}</span> {log.action}
+                                <span className="block text-xs text-gray-500 dark:text-gray-400">{formatDateTime(log.timestamp, locale)}</span>
+                            </li>
+                        ))}
+                    </ul>
+                )}
+            </div>
+        </main>
+    );
+};
+
+// Reports Page
+const ReportsPage: React.FC<{ project: Project | null; tasks: Task[]; team: TeamMember[]; budget: BudgetItem[]; risks: Risk[]; t: (key: string) => string; }> = ({ project, tasks, team, budget, risks, t }) => {
+    if (!project) return <main className="flex-1 p-6 overflow-y-auto bg-light dark:bg-dark"><EmptyState title={t('noProjectSelected')} message={t('noProjectMessage')} /></main>;
+
+    const handleExport = () => {
+        const headers = ["ID", "Name", "Description", "Status", "Due Date"];
+        const csvRows = [headers.join(",")];
+        tasks.forEach(task => {
+            const row = [task.id, `"${task.name}"`, `"${task.description}"`, task.status, task.dueDate];
+            csvRows.push(row.join(","));
+        });
+        const csvString = csvRows.join("\n");
+        const blob = new Blob([csvString], { type: 'text/csv' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `${project.name}_tasks_report.csv`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+    };
+
+    return (
+        <main className="flex-1 p-6 overflow-y-auto bg-light dark:bg-dark">
+            <div className="flex items-center justify-between">
+                <h1 className="text-2xl font-bold text-gray-900 dark:text-white">{t('reportsTitle').replace('{projectName}', project.name)}</h1>
+                <button onClick={handleExport} className="btn-primary">{t('exportToCsv')}</button>
+            </div>
+            <div className="p-4 mt-6 bg-white rounded-lg shadow-md dark:bg-dark-secondary">
+                <h2 className="text-lg font-semibold">{t('projectSummary')}</h2>
+                <div className="grid grid-cols-2 gap-4 mt-4 text-sm">
+                    <div><strong>{t('projectName')}:</strong> {project.name}</div>
+                    <div><strong>{t('totalTasks')}:</strong> {tasks.length}</div>
+                    <div><strong>{t('teamMembers')}:</strong> {team.length}</div>
+                    <div><strong>{t('openRisks')}:</strong> {risks.length}</div>
+                    <div><strong>{t('total')}:</strong> {formatCurrencyEGP(budget.reduce((s, i) => s + i.allocated, 0), 'en')}</div>
+                </div>
+            </div>
+        </main>
+    );
+};
+
 
 // 10. MAIN APP COMPONENT
 
@@ -959,6 +1052,7 @@ const App: React.FC = () => {
     const [budget, setBudget] = useState<BudgetItem[]>([]);
     const [risks, setRisks] = useState<Risk[]>([]);
     const [designs, setDesigns] = useState<Design[]>([]);
+    const [activityLogs, setActivityLogs] = useState<ActivityLog[]>([]);
     
     // Modal States
     const [isNewProjectModalOpen, setIsNewProjectModalOpen] = useState(false);
@@ -978,11 +1072,25 @@ const App: React.FC = () => {
     const [editingDesign, setEditingDesign] = useState<Design | null>(null);
     
     // Deletion State
-    const [itemToDelete, setItemToDelete] = useState<{ type: string; id: string | Design } | null>(null);
+    const [itemToDelete, setItemToDelete] = useState<{ type: string; id: string | Design; name?: string; } | null>(null);
     
     // i18n function
     const t = (key: string) => translations[locale][key] || key;
 
+    // Helper: Activity Logger
+    const logActivity = async (action: string) => {
+      if (!user || !selectedProjectId) return;
+      try {
+        await addDoc(collection(db, "artifacts", appId, "public", "data", "projects", selectedProjectId, "activity_logs"), {
+          userEmail: user.email,
+          action,
+          timestamp: serverTimestamp()
+        });
+      } catch (error) {
+        console.error("Failed to log activity:", error);
+      }
+    };
+    
     // Effects
     useEffect(() => {
         onAuthStateChanged(auth, (user) => { setUser(user); setLoadingAuth(false); });
@@ -1009,16 +1117,20 @@ const App: React.FC = () => {
     }, [user, selectedProjectId]);
     
     useEffect(() => {
-        if (!selectedProjectId) { setTasks([]); setTeam([]); setBudget([]); setRisks([]); setDesigns([]); return; }
-        const subCollections = ["tasks", "team", "budget", "risks", "designs"];
-        const setters:any = { tasks: setTasks, team: setTeam, budget: setBudget, risks: setRisks, designs: setDesigns };
+        if (!selectedProjectId) { setTasks([]); setTeam([]); setBudget([]); setRisks([]); setDesigns([]); setActivityLogs([]); return; }
+        const subCollections = ["tasks", "team", "budget", "risks", "designs", "activity_logs"];
+        const setters:any = { tasks: setTasks, team: setTeam, budget: setBudget, risks: setRisks, designs: setDesigns, activity_logs: setActivityLogs };
 
-        const unsubs = subCollections.map(col => 
-            onSnapshot(collection(db, "artifacts", appId, "public", "data", "projects", selectedProjectId, col), snapshot => {
+        const unsubs = subCollections.map(col => {
+            const colQuery = col === 'activity_logs' 
+                ? query(collection(db, "artifacts", appId, "public", "data", "projects", selectedProjectId, col), orderBy("timestamp", "desc"))
+                : collection(db, "artifacts", appId, "public", "data", "projects", selectedProjectId, col);
+
+            return onSnapshot(colQuery, snapshot => {
                 const data = snapshot.docs.map(d => ({id: d.id, ...d.data()}));
                 setters[col](data);
-            })
-        );
+            });
+        });
         return () => unsubs.forEach(unsub => unsub());
     }, [selectedProjectId]);
 
@@ -1034,8 +1146,10 @@ const App: React.FC = () => {
         try {
             if (id) {
                 await updateDoc(doc(db, ...collectionPath, id), payload);
+                logActivity(`Updated ${type.slice(0,-1)}: "${payload.name || payload.category || payload.description}"`);
             } else {
                 await addDoc(collection(db, ...collectionPath), payload);
+                logActivity(`Created new ${type.slice(0,-1)}: "${payload.name || payload.category || payload.description}"`);
             }
         } catch (error) {
             console.error("Error saving item:", error);
@@ -1048,9 +1162,11 @@ const App: React.FC = () => {
         const projectsPath = ["artifacts", appId, "public", "data", "projects"];
         if (id) {
             await updateDoc(doc(db, ...projectsPath, id), payload);
+            logActivity(`Updated project: "${payload.name}"`);
         } else {
             const newDocRef = await addDoc(collection(db, ...projectsPath), { ...payload, ownerId: user.uid });
             setSelectedProjectId(newDocRef.id);
+            // Can't log here as selectedProjectId is not set yet for the collection path. This could be improved.
         }
     };
     
@@ -1059,15 +1175,15 @@ const App: React.FC = () => {
       setIsNewProjectModalOpen(true);
     };
 
-    const handleDelete = (type: string, id: string | Design) => { setItemToDelete({ type, id }); setIsConfirmModalOpen(true); };
+    const handleDelete = (type: string, id: string | Design, name?: string) => { setItemToDelete({ type, id, name }); setIsConfirmModalOpen(true); };
     
     const confirmDelete = async () => {
-        if (!itemToDelete) return;
+        if (!itemToDelete || !user) return;
 
-        const { type, id } = itemToDelete;
+        const { type, id, name } = itemToDelete;
 
         if (type === 'project' && typeof id === 'string') {
-            const subCollections = ['tasks', 'team', 'budget', 'risks', 'designs'];
+            const subCollections = ['tasks', 'team', 'budget', 'risks', 'designs', 'activity_logs'];
             const batch = writeBatch(db);
 
             for (const subCollection of subCollections) {
@@ -1077,14 +1193,17 @@ const App: React.FC = () => {
             }
             batch.delete(doc(db, "artifacts", appId, "public", "data", "projects", id));
             await batch.commit();
+            // Project-level logging would need a different approach.
 
         } else if (selectedProjectId && typeof id === 'string') {
             const collectionPath = ["artifacts", appId, "public", "data", "projects", selectedProjectId, type];
             await deleteDoc(doc(db, ...collectionPath, id));
+            logActivity(`Deleted ${type.slice(0,-1)}: "${name || id}"`);
         } else if (type === 'designs' && typeof id === 'object' && selectedProjectId) {
             const design = id as Design;
             await deleteObject(ref(storage, design.storagePath));
             await deleteDoc(doc(db, "artifacts", appId, "public", "data", "projects", selectedProjectId, "designs", design.id));
+            logActivity(`Deleted design: "${design.name}"`);
         }
         
         setItemToDelete(null);
@@ -1100,10 +1219,14 @@ const App: React.FC = () => {
         await addDoc(collection(db, "artifacts", appId, "public", "data", "projects", selectedProjectId, "designs"), {
             name: file.name, imageUrl: downloadURL, storagePath: storagePath, uploadedAt: serverTimestamp()
         });
+        logActivity(`Uploaded new design: "${file.name}"`);
     };
 
     const handleSaveDesignName = async (design: Pick<Design, 'id'|'name'>) => {
-        if (selectedProjectId) await updateDoc(doc(db, "artifacts", appId, "public", "data", "projects", selectedProjectId, "designs", design.id), { name: design.name });
+        if (selectedProjectId) {
+            await updateDoc(doc(db, "artifacts", appId, "public", "data", "projects", selectedProjectId, "designs", design.id), { name: design.name });
+            logActivity(`Renamed design to: "${design.name}"`);
+        }
     };
 
     const selectedProject = projects.find(p => p.id === selectedProjectId) || null;
@@ -1113,15 +1236,17 @@ const App: React.FC = () => {
   
     return (
         <BrowserRouter>
-          <DashboardLayout user={user} projects={projects} selectedProjectId={selectedProjectId} onSelectProject={setSelectedProjectId} onNewProject={() => { setEditingProject(null); setIsNewProjectModalOpen(true); }} onEditProject={handleEditProject} onDeleteProject={(id) => handleDelete('project', id)} onSignOut={handleSignOut} theme={theme} toggleTheme={toggleTheme} locale={locale} toggleLocale={toggleLocale} t={t}>
+          <DashboardLayout user={user} projects={projects} selectedProjectId={selectedProjectId} onSelectProject={setSelectedProjectId} onNewProject={() => { setEditingProject(null); setIsNewProjectModalOpen(true); }} onEditProject={handleEditProject} onDeleteProject={(id) => handleDelete('project', id, projects.find(p=>p.id===id)?.name)} onSignOut={handleSignOut} theme={theme} toggleTheme={toggleTheme} locale={locale} toggleLocale={toggleLocale} t={t}>
             <Routes>
               <Route path="/" element={<DashboardPage project={selectedProject} tasks={tasks} team={team} budget={budget} risks={risks} t={t} locale={locale} />} />
-              <Route path="/tasks" element={<TasksPage project={selectedProject} tasks={tasks} onNew={() => { setEditingTask(null); setIsTaskModalOpen(true); }} onEdit={(task) => { setEditingTask(task); setIsTaskModalOpen(true); }} onDelete={(id) => handleDelete('tasks', id)} t={t} locale={locale} />} />
-              <Route path="/team" element={<TeamPage project={selectedProject} team={team} onNew={() => { setEditingMember(null); setIsTeamMemberModalOpen(true); }} onEdit={(member) => { setEditingMember(member); setIsTeamMemberModalOpen(true); }} onDelete={(id) => handleDelete('team', id)} t={t} />} />
-              <Route path="/budget" element={<BudgetPage project={selectedProject} budget={budget} onNew={() => { setEditingBudgetItem(null); setIsBudgetItemModalOpen(true); }} onEdit={(item) => { setEditingBudgetItem(item); setIsBudgetItemModalOpen(true); }} onDelete={(id) => handleDelete('budget', id)} t={t} locale={locale} />} />
-              <Route path="/risks" element={<RisksPage project={selectedProject} risks={risks} onNew={() => { setEditingRisk(null); setIsRiskModalOpen(true); }} onEdit={(risk) => { setEditingRisk(risk); setIsRiskModalOpen(true); }} onDelete={(id) => handleDelete('risks', id)} t={t} />} />
+              <Route path="/tasks" element={<TasksPage project={selectedProject} tasks={tasks} onNew={() => { setEditingTask(null); setIsTaskModalOpen(true); }} onEdit={(task) => { setEditingTask(task); setIsTaskModalOpen(true); }} onDelete={(id) => handleDelete('tasks', id, tasks.find(item=>item.id===id)?.name)} t={t} locale={locale} />} />
+              <Route path="/team" element={<TeamPage project={selectedProject} team={team} onNew={() => { setEditingMember(null); setIsTeamMemberModalOpen(true); }} onEdit={(member) => { setEditingMember(member); setIsTeamMemberModalOpen(true); }} onDelete={(id) => handleDelete('team', id, team.find(item=>item.id===id)?.name)} t={t} />} />
+              <Route path="/budget" element={<BudgetPage project={selectedProject} budget={budget} onNew={() => { setEditingBudgetItem(null); setIsBudgetItemModalOpen(true); }} onEdit={(item) => { setEditingBudgetItem(item); setIsBudgetItemModalOpen(true); }} onDelete={(id) => handleDelete('budget', id, budget.find(item=>item.id===id)?.category)} t={t} locale={locale} />} />
+              <Route path="/risks" element={<RisksPage project={selectedProject} risks={risks} onNew={() => { setEditingRisk(null); setIsRiskModalOpen(true); }} onEdit={(risk) => { setEditingRisk(risk); setIsRiskModalOpen(true); }} onDelete={(id) => handleDelete('risks', id, risks.find(item=>item.id===id)?.description)} t={t} />} />
               <Route path="/designs" element={<DesignsPage project={selectedProject} designs={designs} onDelete={(design) => handleDelete('designs', design)} onUpload={handleUploadDesign} onEdit={(design) => { setEditingDesign(design); setIsDesignModalOpen(true); }} t={t} locale={locale} />} />
               <Route path="/profile" element={<ProfilePage user={user} projects={projects} t={t} locale={locale} />} />
+              <Route path="/settings" element={<SettingsPage project={selectedProject} activityLogs={activityLogs} t={t} locale={locale} />} />
+              <Route path="/reports" element={<ReportsPage project={selectedProject} tasks={tasks} team={team} budget={budget} risks={risks} t={t} />} />
               <Route path="*" element={<Navigate to="/" />} />
             </Routes>
           </DashboardLayout>
