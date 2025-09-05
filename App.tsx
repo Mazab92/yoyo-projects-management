@@ -71,7 +71,7 @@ const translations = {
     "designsTitle": "Designs for {projectName}", "designsMessage": "Upload and manage design assets for your project.", "uploadDesign": "Upload New Design", "pngFile": "PNG File", "upload": "Upload", "uploading": "Uploading...", "pngOnlyError": "Only PNG files are allowed.", "uploadError": "File upload failed. Please try again.", "uploadSuccess": "Upload successful!", "noDesigns": "No Designs Yet", "noDesignsMessage": "Upload your first design using the form above.", "uploaded": "Uploaded",
     "profileTitle": "User Profile", "myTasks": "My Assigned Tasks", "myProjects": "My Projects", "achievements": "Achievements", "noAssignedTasks": "You have no tasks assigned to you.", "achievementCompletedProjects": "Completed {count} projects.",
     "settingsTitle": "Settings & Activity Log", "activityLog": "Activity Log", "noActivity": "No activity recorded yet.",
-    "reportsTitle": "Reports for {projectName}", "projectSummary": "Project Summary", "exportToCsv": "Export to CSV", "exportNotImplemented": "CSV Export functionality to be implemented.",
+    "reportsTitle": "Reports for {projectName}", "projectSummary": "Project Summary", "exportToCsv": "Export to CSV", "exportToPdf": "Export to PDF",
     // Task Page enhancements
     "filterByAssignee": "Filter by assignee", "filterByStatus": "Filter by status", "sortBy": "Sort By", "priorityDesc": "Priority (High to Low)", "priorityAsc": "Priority (Low to High)", "dueDateSort": "Due Date",
     // Task Statuses
@@ -107,7 +107,7 @@ const translations = {
     "designsTitle": "تصاميم مشروع {projectName}", "designsMessage": "قم بتحميل وإدارة أصول التصميم لمشروعك.", "uploadDesign": "تحميل تصميم جديد", "pngFile": "ملف PNG", "upload": "تحميل", "uploading": "جاري التحميل...", "pngOnlyError": "يُسمح بملفات PNG فقط.", "uploadError": "فشل تحميل الملف. يرجى المحاولة مرة أخرى.", "uploadSuccess": "تم التحميل بنجاح!", "noDesigns": "لا توجد تصاميم بعد", "noDesignsMessage": "قم بتحميل تصميمك الأول باستخدام النموذج أعلاه.", "uploaded": "تم الرفع",
     "profileTitle": "الملف الشخصي للمستخدم", "myTasks": "المهام المسندة إلي", "myProjects": "مشاريعي", "achievements": "الإنجازات", "noAssignedTasks": "ليس لديك مهام مسندة إليك.", "achievementCompletedProjects": "أكملت {count} مشاريع.",
     "settingsTitle": "الإعدادات وسجل النشاط", "activityLog": "سجل النشاط", "noActivity": "لم يتم تسجيل أي نشاط بعد.",
-    "reportsTitle": "تقارير مشروع {projectName}", "projectSummary": "ملخص المشروع", "exportToCsv": "تصدير إلى CSV", "exportNotImplemented": "سيتم تنفيذ وظيفة تصدير CSV.",
+    "reportsTitle": "تقارير مشروع {projectName}", "projectSummary": "ملخص المشروع", "exportToCsv": "تصدير إلى CSV", "exportToPdf": "تصدير إلى PDF",
     // Task Page enhancements
     "filterByAssignee": "تصفية حسب المسؤول", "filterByStatus": "تصفية حسب الحالة", "sortBy": "فرز حسب", "priorityDesc": "الأولوية (من الأعلى إلى الأقل)", "priorityAsc": "الأولوية (من الأقل إلى الأعلى)", "dueDateSort": "تاريخ الاستحقاق",
     // Task Statuses
@@ -669,17 +669,121 @@ const DesignsPage: React.FC<{ project: Project | null; designs: Design[]; onEdit
     );
 };
 
-const ReportsPage: React.FC<{ project: Project | null; t: (key: string) => string; }> = ({ project, t }) => {
+declare const jsPDF: any;
+declare const html2canvas: any;
+
+const ReportsPage: React.FC<{ project: Project | null; tasks: Task[], team: TeamMember[], budget: BudgetItem[], risks: Risk[], t: (key: string) => string; locale: Locale; }> = ({ project, tasks, team, budget, risks, t, locale }) => {
+    const reportRef = useRef<HTMLDivElement>(null);
     if (!project) return <main className="flex-1 p-6 overflow-y-auto"><EmptyState title={t('noProjectSelected')} message={t('noProjectMessage')} /></main>;
-    const { addToast } = useToast();
-    const handleExport = () => { addToast(t('exportNotImplemented'), 'info'); };
+
+    const teamMap = new Map(team.map(member => [member.id, member.name]));
+
+    const handleExportCsv = () => {
+        if (!project) return;
+        const escapeCsvCell = (cell: any): string => {
+            const cellStr = String(cell ?? '');
+            if (cellStr.includes(',') || cellStr.includes('"') || cellStr.includes('\n')) {
+                return `"${cellStr.replace(/"/g, '""')}"`;
+            }
+            return cellStr;
+        };
+        let csvContent = `Project Report: ${escapeCsvCell(project.name)}\n\n`;
+        csvContent += "Tasks\nName,Description,Status,Due Date,Priority,Assignee\n";
+        tasks.forEach(task => { const assigneeName = task.assigneeId ? teamMap.get(task.assigneeId) : 'Unassigned'; csvContent += [escapeCsvCell(task.name), escapeCsvCell(task.description), escapeCsvCell(task.status), escapeCsvCell(task.dueDate), escapeCsvCell(task.priority), escapeCsvCell(assigneeName)].join(',') + '\n'; });
+        csvContent += '\nTeam\nName,Role,Email\n';
+        team.forEach(member => { csvContent += [escapeCsvCell(member.name), escapeCsvCell(member.role), escapeCsvCell(member.email)].join(',') + '\n'; });
+        csvContent += '\nBudget\nCategory,Allocated,Spent,Remaining\n';
+        budget.forEach(item => { csvContent += [escapeCsvCell(item.category), escapeCsvCell(item.allocated), escapeCsvCell(item.spent), escapeCsvCell(item.allocated - item.spent)].join(',') + '\n'; });
+        csvContent += '\nRisks\nDescription,Likelihood,Impact,Mitigation Strategy\n';
+        risks.forEach(risk => { csvContent += [escapeCsvCell(risk.description), escapeCsvCell(risk.likelihood), escapeCsvCell(risk.impact), escapeCsvCell(risk.mitigation)].join(',') + '\n'; });
+        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+        const link = document.createElement('a');
+        const url = URL.createObjectURL(blob);
+        link.setAttribute('href', url);
+        link.setAttribute('download', `${project.name}-report.csv`);
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    };
+
+    const handleExportPdf = () => {
+        if (!reportRef.current || !project) return;
+        const isDarkMode = document.documentElement.classList.contains('dark');
+        if(isDarkMode) reportRef.current.classList.add('dark');
+        html2canvas(reportRef.current, { scale: 2, useCORS: true, backgroundColor: isDarkMode ? '#1f2937' : '#ffffff' }).then(canvas => {
+            if(isDarkMode) reportRef.current?.classList.remove('dark');
+            const imgData = canvas.toDataURL('image/png');
+            const pdf = new jsPDF.jsPDF({ orientation: 'p', unit: 'mm', format: 'a4' });
+            const pdfWidth = pdf.internal.pageSize.getWidth();
+            const canvasWidth = canvas.width;
+            const canvasHeight = canvas.height;
+            const ratio = canvasWidth / canvasHeight;
+            const imgHeight = pdfWidth / ratio;
+            let heightLeft = imgHeight;
+            let position = 0;
+            pdf.addImage(imgData, 'PNG', 0, position, pdfWidth, imgHeight);
+            heightLeft -= pdf.internal.pageSize.getHeight();
+            while (heightLeft > 0) {
+                position = heightLeft - imgHeight;
+                pdf.addPage();
+                pdf.addImage(imgData, 'PNG', 0, position, pdfWidth, imgHeight);
+                heightLeft -= pdf.internal.pageSize.getHeight();
+            }
+            pdf.save(`${project.name}-report.pdf`);
+        }).catch(err => {
+            console.error("Error generating PDF", err);
+            if(isDarkMode) reportRef.current?.classList.remove('dark');
+        });
+    };
+
+    const ReportSection: React.FC<{title: string; children: ReactNode}> = ({title, children}) => (
+        <div className="mt-8">
+            <h3 className="text-xl font-semibold text-gray-800 dark:text-gray-200">{title}</h3>
+            <div className="mt-4 overflow-x-auto bg-white rounded-lg shadow dark:bg-dark-secondary">
+                {children}
+            </div>
+        </div>
+    );
+    const tableHeaderStyle = "px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider dark:text-gray-400";
+    const tableCellStyle = "px-6 py-4 whitespace-nowrap text-sm text-gray-800 dark:text-gray-200";
+    const tableRowStyle = "border-b border-gray-200 dark:border-gray-700";
+
     return (
         <main className="flex-1 p-6 overflow-y-auto">
-            <h1 className="text-2xl font-bold text-gray-900 dark:text-white">{t('reportsTitle').replace('{projectName}', project.name)}</h1>
-            <div className="p-4 mt-6 bg-white rounded-lg shadow dark:bg-dark-secondary">
+            <div className="flex flex-col items-start justify-between sm:flex-row sm:items-center">
+                <h1 className="text-2xl font-bold text-gray-900 dark:text-white">{t('reportsTitle').replace('{projectName}', project.name)}</h1>
+                <div className="flex mt-4 space-x-2 sm:mt-0">
+                    <button onClick={handleExportCsv} className={btnSecondaryStyle}>{t('exportToCsv')}</button>
+                    <button onClick={handleExportPdf} className={btnPrimaryStyle}>{t('exportToPdf')}</button>
+                </div>
+            </div>
+            <div ref={reportRef} className="p-4 mt-6 bg-white rounded-lg shadow dark:bg-dark-secondary">
                 <h2 className="text-lg font-semibold">{t('projectSummary')}</h2>
-                <p className="mt-2 text-gray-600 dark:text-gray-400">This section will contain detailed project reports and analytics.</p>
-                <button onClick={handleExport} className={`mt-4 ${btnPrimaryStyle}`}>{t('exportToCsv')}</button>
+                <p className="mt-2 text-gray-600 dark:text-gray-400">{project.description}</p>
+                <ReportSection title={t('tasks')}>
+                    <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+                        <thead><tr><th className={tableHeaderStyle}>{t('taskName')}</th><th className={tableHeaderStyle}>{t('status')}</th><th className={tableHeaderStyle}>{t('dueDate')}</th><th className={tableHeaderStyle}>{t('assignee')}</th></tr></thead>
+                        <tbody className="bg-white divide-y divide-gray-200 dark:bg-dark-secondary dark:divide-gray-700">{tasks.map(task => <tr key={task.id} className={tableRowStyle}><td className={tableCellStyle}>{task.name}</td><td className={tableCellStyle}>{task.status}</td><td className={tableCellStyle}>{formatDate(task.dueDate, locale)}</td><td className={tableCellStyle}>{teamMap.get(task.assigneeId || '') || 'N/A'}</td></tr>)}</tbody>
+                    </table>
+                </ReportSection>
+                <ReportSection title={t('team')}>
+                    <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+                        <thead><tr><th className={tableHeaderStyle}>{t('memberName')}</th><th className={tableHeaderStyle}>{t('role')}</th><th className={tableHeaderStyle}>{t('email')}</th></tr></thead>
+                        <tbody className="bg-white divide-y divide-gray-200 dark:bg-dark-secondary dark:divide-gray-700">{team.map(member => <tr key={member.id} className={tableRowStyle}><td className={tableCellStyle}>{member.name}</td><td className={tableCellStyle}>{member.role}</td><td className={tableCellStyle}>{member.email}</td></tr>)}</tbody>
+                    </table>
+                </ReportSection>
+                 <ReportSection title={t('budget')}>
+                    <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+                        <thead><tr><th className={tableHeaderStyle}>{t('category')}</th><th className={tableHeaderStyle}>{t('allocated')}</th><th className={tableHeaderStyle}>{t('spent')}</th><th className={tableHeaderStyle}>{t('remaining')}</th></tr></thead>
+                        <tbody className="bg-white divide-y divide-gray-200 dark:bg-dark-secondary dark:divide-gray-700">{budget.map(item => <tr key={item.id} className={tableRowStyle}><td className={tableCellStyle}>{item.category}</td><td className={tableCellStyle}>{formatCurrencyEGP(item.allocated, locale)}</td><td className={tableCellStyle}>{formatCurrencyEGP(item.spent, locale)}</td><td className={tableCellStyle}>{formatCurrencyEGP(item.allocated - item.spent, locale)}</td></tr>)}</tbody>
+                    </table>
+                </ReportSection>
+                <ReportSection title={t('risks')}>
+                    <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+                        <thead><tr><th className={tableHeaderStyle}>{t('description')}</th><th className={tableHeaderStyle}>{t('likelihood')}</th><th className={tableHeaderStyle}>{t('impact')}</th></tr></thead>
+                        <tbody className="bg-white divide-y divide-gray-200 dark:bg-dark-secondary dark:divide-gray-700">{risks.map(risk => <tr key={risk.id} className={tableRowStyle}><td className={tableCellStyle}>{risk.description}</td><td className={tableCellStyle}>{risk.likelihood}</td><td className={tableCellStyle}>{risk.impact}</td></tr>)}</tbody>
+                    </table>
+                </ReportSection>
             </div>
         </main>
     );
@@ -893,7 +997,7 @@ const App: React.FC = () => {
               <Route path="/budget" element={<BudgetPage project={selectedProject} budget={budget} onNew={() => { setEditingBudgetItem(null); setIsBudgetItemModalOpen(true); }} onEdit={(item) => { setEditingBudgetItem(item); setIsBudgetItemModalOpen(true); }} onDelete={(id) => handleDelete('budget', id, budget.find(item=>item.id===id)?.category)} t={t} locale={locale} />} />
               <Route path="/risks" element={<RisksPage project={selectedProject} risks={risks} onNew={() => { setEditingRisk(null); setIsRiskModalOpen(true); }} onEdit={(risk) => { setEditingRisk(risk); setIsRiskModalOpen(true); }} onDelete={(id) => handleDelete('risks', id, risks.find(item=>item.id===id)?.description)} t={t} />} />
               <Route path="/designs" element={<DesignsPage project={selectedProject} designs={designs} onEdit={(design) => { setEditingDesign(design); setIsDesignModalOpen(true); }} onDelete={(design) => handleDelete('designs', design, design.name)} onUpload={handleUploadDesign} t={t} locale={locale} />} />
-              <Route path="/reports" element={<ReportsPage project={selectedProject} t={t} />} />
+              <Route path="/reports" element={<ReportsPage project={selectedProject} tasks={tasks} team={team} budget={budget} risks={risks} t={t} locale={locale} />} />
               <Route path="/settings" element={<SettingsPage project={selectedProject} activityLogs={activityLogs} t={t} locale={locale} />} />
               <Route path="/profile" element={<ProfilePage user={user} t={t} />} />
               <Route path="*" element={<Navigate to="/" />} />
