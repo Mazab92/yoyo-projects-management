@@ -131,7 +131,7 @@ export interface Task {
   projectId?: string; // For profile page
   projectName?: string; // for profile page
   priority: Priority;
-  parentId?: string;
+  parentId?: string | null;
 }
 
 export interface TeamMember {
@@ -360,7 +360,7 @@ const NewProjectModal: React.FC<{ isOpen: boolean; onClose: () => void; onSave: 
 const TaskModal: React.FC<{ isOpen: boolean; onClose: () => void; onSave: (task: Omit<Task, 'id'> | Task) => void; editingTask: Task | null; team: TeamMember[]; tasks: Task[]; t: (key: string) => string; }> = ({ isOpen, onClose, onSave, editingTask, team, tasks, t }) => {
     const [name, setName] = useState(''); const [description, setDescription] = useState(''); const [status, setStatus] = useState<Status>('To Do'); const [dueDate, setDueDate] = useState(''); const [assigneeId, setAssigneeId] = useState<string | undefined>(undefined); const [priority, setPriority] = useState<Priority>('Medium'); const [parentId, setParentId] = useState<string | undefined>(undefined);
     useEffect(() => {
-        if (editingTask) { setName(editingTask.name); setDescription(editingTask.description); setStatus(editingTask.status); setDueDate(new Date(editingTask.dueDate).toISOString().split('T')[0]); setAssigneeId(editingTask.assigneeId); setPriority(editingTask.priority); setParentId(editingTask.parentId); }
+        if (editingTask) { setName(editingTask.name); setDescription(editingTask.description); setStatus(editingTask.status); setDueDate(new Date(editingTask.dueDate).toISOString().split('T')[0]); setAssigneeId(editingTask.assigneeId); setPriority(editingTask.priority); setParentId(editingTask.parentId ?? undefined); }
         else { setName(''); setDescription(''); setStatus('To Do'); setDueDate(''); setAssigneeId(undefined); setPriority('Medium'); setParentId(undefined); }
     }, [editingTask, isOpen]);
     const handleSubmit = (e: React.FormEvent) => { e.preventDefault(); const taskData = { name, description, status, dueDate, assigneeId, priority, parentId }; onSave(editingTask ? { ...taskData, id: editingTask.id } : taskData); onClose(); };
@@ -840,6 +840,13 @@ const App: React.FC = () => {
             }
         }
         
+        // FIX: Firestore does not accept `undefined` values. When no parent task is
+        // selected, parentId can be `undefined` or an empty string from the form.
+        // We convert this to `null` before saving to prevent a Firestore error.
+        if (type === 'tasks' && (payload.parentId === undefined || payload.parentId === '')) {
+            payload.parentId = null;
+        }
+
         const collectionPath = ["artifacts", appId, "public", "data", "projects", selectedProjectId, type];
         try {
             if (id) { 
