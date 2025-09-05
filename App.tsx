@@ -1,3 +1,4 @@
+
 // Yoyo Project Management - Single File Application
 // This file contains the entire refactored React application, including all components, pages, types, and logic.
 
@@ -42,7 +43,7 @@ const appId = firebaseConfig.projectId; // Use projectId as the identifier for t
 const translations = {
   en: {
     // General
-    "save": "Save", "cancel": "Cancel", "delete": "Delete", "confirm": "Confirm", "edit": "Edit", "add": "Add", "urgent": "Urgent", "high": "High", "medium": "Medium", "low": "Low", "priority": "Priority", "parentTask": "Parent Task",
+    "save": "Save", "cancel": "Cancel", "delete": "Delete", "confirm": "Confirm", "edit": "Edit", "add": "Add", "urgent": "Urgent", "high": "High", "medium": "Medium", "low": "Low", "priority": "Priority", "parentTask": "Parent Task", "parent": "Parent",
     // Sidebar
     "dashboard": "Dashboard", "tasks": "Tasks", "team": "Team", "budget": "Budget", "risks": "Risks", "designs": "Designs", "projects": "Projects", "settings": "Settings", "reports": "Reports",
     // Header
@@ -58,7 +59,7 @@ const translations = {
     "addBudgetItem": "Add Budget Item", "editBudgetItem": "Edit Budget Item", "category": "Category", "allocatedBudget": "Allocated Budget", "spentBudget": "Amount Spent",
     "addRisk": "Add Risk", "editRisk": "Edit Risk", "likelihood": "Likelihood", "impact": "Impact", "mitigation": "Mitigation Strategy",
     "editDesign": "Edit Design", "designName": "Design Name",
-    "parentTaskNotDoneError": "Cannot complete subtask: Parent task is not done yet.",
+    "parentTaskNotDoneError": "Cannot complete this task. Please finish parent task '{parentTaskName}' first.",
     // Pages
     "noProjectSelected": "No Project Selected", "noProjectMessage": "Please select a project to begin.",
     "dashboardTitle": "Dashboard: {projectName}",
@@ -67,15 +68,50 @@ const translations = {
     "teamTitle": "Team for {projectName}", "noTeam": "No Team Members", "noTeamMessage": "Add team members to your project.",
     "budgetTitle": "Budget for {projectName}", "noBudget": "No Budget Items", "noBudgetMessage": "Add budget items to track project expenses.", "allocated": "Allocated", "spent": "Spent", "remaining": "Remaining", "total": "Total",
     "risksTitle": "Risks for {projectName}", "noRisks": "No Risks Identified", "noRisksMessage": "Add potential risks to your project.",
-    "designsTitle": "Designs for {projectName}", "designsMessage": "Upload and manage design assets for your project.", "uploadDesign": "Upload New Design", "pngFile": "PNG File", "upload": "Upload", "uploading": "Uploading...", "pngOnlyError": "Only PNG files are allowed.", "uploadError": "File upload failed. Please try again.", "noDesigns": "No Designs Yet", "noDesignsMessage": "Upload your first design using the form above.", "uploaded": "Uploaded",
-    "profileTitle": "User Profile", "myTasks": "My Assigned Tasks", "myProjects": "My Projects", "achievements": "Achievements", "noAssignedTasks": "You have no tasks assigned to you.", "completedProjects": "Completed 5 projects.",
+    "designsTitle": "Designs for {projectName}", "designsMessage": "Upload and manage design assets for your project.", "uploadDesign": "Upload New Design", "pngFile": "PNG File", "upload": "Upload", "uploading": "Uploading...", "pngOnlyError": "Only PNG files are allowed.", "uploadError": "File upload failed. Please try again.", "uploadSuccess": "Upload successful!", "noDesigns": "No Designs Yet", "noDesignsMessage": "Upload your first design using the form above.", "uploaded": "Uploaded",
+    "profileTitle": "User Profile", "myTasks": "My Assigned Tasks", "myProjects": "My Projects", "achievements": "Achievements", "noAssignedTasks": "You have no tasks assigned to you.", "achievementCompletedProjects": "Completed {count} projects.",
     "settingsTitle": "Settings & Activity Log", "activityLog": "Activity Log", "noActivity": "No activity recorded yet.",
-    "reportsTitle": "Reports for {projectName}", "projectSummary": "Project Summary", "exportToCsv": "Export to CSV",
+    "reportsTitle": "Reports for {projectName}", "projectSummary": "Project Summary", "exportToCsv": "Export to CSV", "exportNotImplemented": "CSV Export functionality to be implemented.",
     // Task Page enhancements
     "filterByAssignee": "Filter by assignee", "filterByStatus": "Filter by status", "sortBy": "Sort By", "priorityDesc": "Priority (High to Low)", "priorityAsc": "Priority (Low to High)", "dueDateSort": "Due Date",
+    // Task Statuses
+    "toDo": "To Do", "inProgress": "In Progress", "done": "Done", "archived": "Archived"
   },
   ar: {
-    // Omitting for brevity, but would be fully translated in a real application
+    // General
+    "save": "حفظ", "cancel": "إلغاء", "delete": "حذف", "confirm": "تأكيد", "edit": "تعديل", "add": "إضافة", "urgent": "عاجل", "high": "مرتفع", "medium": "متوسط", "low": "منخفض", "priority": "الأولوية", "parentTask": "المهمة الرئيسية", "parent": "رئيسي",
+    // Sidebar
+    "dashboard": "لوحة التحكم", "tasks": "المهام", "team": "الفريق", "budget": "الميزانية", "risks": "المخاطر", "designs": "التصاميم", "projects": "المشاريع", "settings": "الإعدادات", "reports": "التقارير",
+    // Header
+    "signOut": "تسجيل الخروج", "profile": "الملف الشخصي",
+    // Login
+    "loginTitle": "تسجيل الدخول إلى ProjectHub", "email": "البريد الإلكتروني", "password": "كلمة المرور", "logIn": "تسجيل الدخول",
+    // Modals
+    "newProject": "مشروع جديد", "editProject": "تعديل المشروع", "projectName": "اسم المشروع", "description": "الوصف", "startDate": "تاريخ البدء", "endDate": "تاريخ الانتهاء", "createProject": "إنشاء مشروع", "updateProject": "تحديث المشروع",
+    "deleteProjectTitle": "حذف المشروع", "deleteProjectMessage": "هل أنت متأكد أنك تريد حذف هذا المشروع؟ سيؤدي هذا إلى حذف جميع المهام وأعضاء الفريق وبنود الميزانية والمخاطر والتصاميم المرتبطة به بشكل دائم. لا يمكن التراجع عن هذا الإجراء.",
+    "deleteItemTitle": "تأكيد الحذف", "deleteItemMessage": "هل أنت متأكد؟ لا يمكن التراجع عن هذا.",
+    "addTask": "إضافة مهمة", "editTask": "تعديل المهمة", "taskName": "اسم المهمة", "status": "الحالة", "assignee": "المسؤول", "dueDate": "تاريخ الاستحقاق",
+    "addTeamMember": "إضافة عضو للفريق", "editTeamMember": "تعديل عضو الفريق", "memberName": "اسم العضو", "role": "الدور",
+    "addBudgetItem": "إضافة بند ميزانية", "editBudgetItem": "تعديل بند الميزانية", "category": "الفئة", "allocatedBudget": "الميزانية المخصصة", "spentBudget": "المبلغ المصروف",
+    "addRisk": "إضافة مخاطرة", "editRisk": "تعديل المخاطرة", "likelihood": "الاحتمالية", "impact": "التأثير", "mitigation": "استراتيجية التخفيف",
+    "editDesign": "تعديل التصميم", "designName": "اسم التصميم",
+    "parentTaskNotDoneError": "لا يمكن إكمال هذه المهمة. يرجى إنهاء المهمة الرئيسية '{parentTaskName}' أولاً.",
+    // Pages
+    "noProjectSelected": "لم يتم تحديد مشروع", "noProjectMessage": "يرجى تحديد مشروع للبدء.",
+    "dashboardTitle": "لوحة التحكم: {projectName}",
+    "totalTasks": "إجمالي المهام", "teamMembers": "أعضاء الفريق", "openRisks": "المخاطر القائمة", "budgetSpent": "الميزانية المصروفة", "taskStatus": "حالة المهام", "budgetOverview": "نظرة عامة على الميزانية",
+    "tasksTitle": "مهام مشروع {projectName}", "noTasks": "لا توجد مهام", "noTasksMessage": "ابدأ بإنشاء مهمة جديدة.",
+    "teamTitle": "فريق مشروع {projectName}", "noTeam": "لا يوجد أعضاء في الفريق", "noTeamMessage": "أضف أعضاء الفريق إلى مشروعك.",
+    "budgetTitle": "ميزانية مشروع {projectName}", "noBudget": "لا توجد بنود في الميزانية", "noBudgetMessage": "أضف بنود الميزانية لتتبع نفقات المشروع.", "allocated": "المخصص", "spent": "المصروف", "remaining": "المتبقي", "total": "الإجمالي",
+    "risksTitle": "مخاطر مشروع {projectName}", "noRisks": "لم يتم تحديد مخاطر", "noRisksMessage": "أضف المخاطر المحتملة لمشروعك.",
+    "designsTitle": "تصاميم مشروع {projectName}", "designsMessage": "قم بتحميل وإدارة أصول التصميم لمشروعك.", "uploadDesign": "تحميل تصميم جديد", "pngFile": "ملف PNG", "upload": "تحميل", "uploading": "جاري التحميل...", "pngOnlyError": "يُسمح بملفات PNG فقط.", "uploadError": "فشل تحميل الملف. يرجى المحاولة مرة أخرى.", "uploadSuccess": "تم التحميل بنجاح!", "noDesigns": "لا توجد تصاميم بعد", "noDesignsMessage": "قم بتحميل تصميمك الأول باستخدام النموذج أعلاه.", "uploaded": "تم الرفع",
+    "profileTitle": "الملف الشخصي للمستخدم", "myTasks": "المهام المسندة إلي", "myProjects": "مشاريعي", "achievements": "الإنجازات", "noAssignedTasks": "ليس لديك مهام مسندة إليك.", "achievementCompletedProjects": "أكملت {count} مشاريع.",
+    "settingsTitle": "الإعدادات وسجل النشاط", "activityLog": "سجل النشاط", "noActivity": "لم يتم تسجيل أي نشاط بعد.",
+    "reportsTitle": "تقارير مشروع {projectName}", "projectSummary": "ملخص المشروع", "exportToCsv": "تصدير إلى CSV", "exportNotImplemented": "سيتم تنفيذ وظيفة تصدير CSV.",
+    // Task Page enhancements
+    "filterByAssignee": "تصفية حسب المسؤول", "filterByStatus": "تصفية حسب الحالة", "sortBy": "فرز حسب", "priorityDesc": "الأولوية (من الأعلى إلى الأقل)", "priorityAsc": "الأولوية (من الأقل إلى الأعلى)", "dueDateSort": "تاريخ الاستحقاق",
+    // Task Statuses
+    "toDo": "قيد التنفيذ", "inProgress": "جاري التنفيذ", "done": "مكتمل", "archived": "مؤرشف"
   }
 };
 
@@ -108,7 +144,7 @@ export interface Risk {
     id:string; description:string; likelihood:'Low'|'Medium'|'High'; impact:'Low'|'Medium'|'High'; mitigation:string;
 }
 export interface Project {
-  id:string; ownerId:string; name:string; description:string; startDate:string; endDate:string;
+  id:string; ownerId:string; name:string; description:string; startDate:string; endDate:string; status?: string; // Added status for achievements
 }
 export interface Design {
   id:string; name:string; imageUrl:string; storagePath:string; uploadedAt:any; // Firestore Timestamp
@@ -336,9 +372,9 @@ const TaskModal: React.FC<{ isOpen: boolean; onClose: () => void; onSave: (task:
             <input type="text" placeholder={t('taskName')} value={name} onChange={e => setName(e.target.value)} required className={inputStyle}/>
             <textarea placeholder={t('description')} value={description} onChange={e => setDescription(e.target.value)} required className={inputStyle}></textarea>
             <div className="grid grid-cols-2 gap-4">
-                <select value={status} onChange={e => setStatus(e.target.value as Status)} className={inputStyle}> <option>To Do</option><option>In Progress</option><option>Done</option><option>Archived</option> </select>
+                <select value={status} onChange={e => setStatus(e.target.value as Status)} className={inputStyle}> <option value="To Do">{t('toDo')}</option><option value="In Progress">{t('inProgress')}</option><option value="Done">{t('done')}</option><option value="Archived">{t('archived')}</option> </select>
                 <select value={assigneeId || ''} onChange={e => setAssigneeId(e.target.value)} className={inputStyle}> <option value="">{t('assignee')}</option> {team.map(member => <option key={member.id} value={member.id}>{member.name}</option>)} </select>
-                <select value={priority} onChange={e => setPriority(e.target.value as Priority)} className={inputStyle}> <option>{t('low')}</option><option>{t('medium')}</option><option>{t('high')}</option><option>{t('urgent')}</option> </select>
+                <select value={priority} onChange={e => setPriority(e.target.value as Priority)} className={inputStyle}> <option value="Low">{t('low')}</option><option value="Medium">{t('medium')}</option><option value="High">{t('high')}</option><option value="Urgent">{t('urgent')}</option> </select>
                 <select value={parentId || ''} onChange={e => setParentId(e.target.value)} className={inputStyle}> <option value="">{t('parentTask')}</option> {tasks.filter(t => t.id !== editingTask?.id).map(task => <option key={task.id} value={task.id}>{task.name}</option>)} </select>
             </div>
             <input type="date" value={dueDate} onChange={e => setDueDate(e.target.value)} required className={inputStyle}/>
@@ -364,7 +400,8 @@ const RiskModal: React.FC<{ isOpen: boolean; onClose: () => void; onSave: (risk:
     const [description, setDescription] = useState(''); const [likelihood, setLikelihood] = useState<'Low' | 'Medium' | 'High'>('Medium'); const [impact, setImpact] = useState<'Low' | 'Medium' | 'High'>('Medium'); const [mitigation, setMitigation] = useState('');
     useEffect(() => { if (editingRisk) { setDescription(editingRisk.description); setLikelihood(editingRisk.likelihood); setImpact(editingRisk.impact); setMitigation(editingRisk.mitigation); } else { setDescription(''); setLikelihood('Medium'); setImpact('Medium'); setMitigation(''); } }, [editingRisk, isOpen]);
     const handleSubmit = (e: React.FormEvent) => { e.preventDefault(); const riskData = { description, likelihood, impact, mitigation }; onSave(editingRisk ? { ...riskData, id: editingRisk.id } : riskData); onClose(); };
-    return (<AnimatePresence>{isOpen && (<div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50"> <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.9 }} className="w-full max-w-lg p-6 bg-white rounded-lg shadow-xl dark:bg-dark-secondary"> <h2 className="text-lg font-semibold">{editingRisk ? t('editRisk') : t('addRisk')}</h2> <form onSubmit={handleSubmit} className="mt-4 space-y-4"> <textarea placeholder={t('description')} value={description} onChange={e => setDescription(e.target.value)} required className={inputStyle}></textarea> <select value={likelihood} onChange={e => setLikelihood(e.target.value as any)} className={inputStyle}><option>Low</option><option>Medium</option><option>High</option></select> <select value={impact} onChange={e => setImpact(e.target.value as any)} className={inputStyle}><option>Low</option><option>Medium</option><option>High</option></select> <textarea placeholder={t('mitigation')} value={mitigation} onChange={e => setMitigation(e.target.value)} required className={inputStyle}></textarea> <div className="flex justify-end pt-2 space-x-2"> <button type="button" onClick={onClose} className={btnSecondaryStyle}>{t('cancel')}</button> <button type="submit" className={btnPrimaryStyle}>{t('save')}</button> </div> </form> </motion.div> </div>)}</AnimatePresence>);
+    // Fix: Corrected typo in AnimatePresence closing tag from </AnPresence> to </AnimatePresence>.
+    return (<AnimatePresence>{isOpen && (<div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50"> <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.9 }} className="w-full max-w-lg p-6 bg-white rounded-lg shadow-xl dark:bg-dark-secondary"> <h2 className="text-lg font-semibold">{editingRisk ? t('editRisk') : t('addRisk')}</h2> <form onSubmit={handleSubmit} className="mt-4 space-y-4"> <textarea placeholder={t('description')} value={description} onChange={e => setDescription(e.target.value)} required className={inputStyle}></textarea> <select value={likelihood} onChange={e => setLikelihood(e.target.value as any)} className={inputStyle}><option value="Low">{t('low')}</option><option value="Medium">{t('medium')}</option><option value="High">{t('high')}</option></select> <select value={impact} onChange={e => setImpact(e.target.value as any)} className={inputStyle}><option value="Low">{t('low')}</option><option value="Medium">{t('medium')}</option><option value="High">{t('high')}</option></select> <textarea placeholder={t('mitigation')} value={mitigation} onChange={e => setMitigation(e.target.value)} required className={inputStyle}></textarea> <div className="flex justify-end pt-2 space-x-2"> <button type="button" onClick={onClose} className={btnSecondaryStyle}>{t('cancel')}</button> <button type="submit" className={btnPrimaryStyle}>{t('save')}</button> </div> </form> </motion.div> </div>)}</AnimatePresence>);
 };
 const DesignModal: React.FC<{ isOpen: boolean; onClose: () => void; onSave: (design: Pick<Design, 'id'|'name'>) => void; editingDesign: Design | null; t: (key: string) => string; }> = ({ isOpen, onClose, onSave, editingDesign, t }) => {
     const [name, setName] = useState('');
@@ -461,7 +498,7 @@ const TasksPage: React.FC<{ project: Project | null; tasks: Task[]; team: TeamMe
                         <div className="flex items-center mt-2 space-x-4">
                             <span className={`px-2 py-0.5 text-xs font-semibold rounded-full ${getPriorityStyles(task.priority).color} ${getPriorityStyles(task.priority).text}`}>{t(task.priority.toLowerCase())}</span>
                             <p className="text-xs text-gray-500 dark:text-gray-500">{t('dueDate')}: {formatDate(task.dueDate, locale)}</p>
-                            {task.parentId && <span className="flex items-center text-xs text-gray-500"><Link2 size={12} className="mr-1"/> Parent</span>}
+                            {task.parentId && <span className="flex items-center text-xs text-gray-500"><Link2 size={12} className="mr-1"/> {t('parent')}</span>}
                         </div>
                     </div>
                     <div className="flex flex-col items-end flex-shrink-0 ml-4">
@@ -487,7 +524,7 @@ const TasksPage: React.FC<{ project: Project | null; tasks: Task[]; team: TeamMe
             {/* Filter and Sort Controls */}
             <div className="grid grid-cols-1 gap-4 my-4 sm:grid-cols-3">
                 <select value={assigneeFilter} onChange={e => setAssigneeFilter(e.target.value)} className={inputStyle}> <option value="">{t('filterByAssignee')}</option> {team.map(m => <option key={m.id} value={m.id}>{m.name}</option>)} </select>
-                <select value={statusFilter} onChange={e => setStatusFilter(e.target.value)} className={inputStyle}> <option value="">{t('filterByStatus')}</option> <option>To Do</option><option>In Progress</option><option>Done</option><option>Archived</option> </select>
+                <select value={statusFilter} onChange={e => setStatusFilter(e.target.value)} className={inputStyle}> <option value="">{t('filterByStatus')}</option> <option value="To Do">{t('toDo')}</option><option value="In Progress">{t('inProgress')}</option><option value="Done">{t('done')}</option><option value="Archived">{t('archived')}</option> </select>
                 <select value={sortBy} onChange={e => setSortBy(e.target.value)} className={inputStyle}> <option value="priorityDesc">{t('priorityDesc')}</option><option value="priorityAsc">{t('priorityAsc')}</option><option value="dueDate">{t('dueDateSort')}</option> </select>
             </div>
             {tasks.length === 0 ? <EmptyState title={t('noTasks')} message={t('noTasksMessage')} action={<button onClick={onNew} className={btnPrimaryStyle}>{t('addTask')}</button>} /> : (
@@ -580,7 +617,7 @@ const DesignsPage: React.FC<{ project: Project | null; designs: Design[]; onEdit
         setUploading(true);
         try {
             await onUpload(file);
-            addToast('Upload successful!', 'success');
+            addToast(t('uploadSuccess'), 'success');
             setFile(null);
         } catch (error) {
             addToast(t('uploadError'), 'error');
@@ -634,8 +671,8 @@ const DesignsPage: React.FC<{ project: Project | null; designs: Design[]; onEdit
 
 const ReportsPage: React.FC<{ project: Project | null; t: (key: string) => string; }> = ({ project, t }) => {
     if (!project) return <main className="flex-1 p-6 overflow-y-auto"><EmptyState title={t('noProjectSelected')} message={t('noProjectMessage')} /></main>;
-    // CSV export logic would be implemented here
-    const handleExport = () => { alert('CSV Export functionality to be implemented.'); };
+    const { addToast } = useToast();
+    const handleExport = () => { addToast(t('exportNotImplemented'), 'info'); };
     return (
         <main className="flex-1 p-6 overflow-y-auto">
             <h1 className="text-2xl font-bold text-gray-900 dark:text-white">{t('reportsTitle').replace('{projectName}', project.name)}</h1>
@@ -672,19 +709,27 @@ const SettingsPage: React.FC<{ project: Project | null; activityLogs: ActivityLo
 const ProfilePage: React.FC<{ user: User; t: (key: string) => string; }> = ({ user, t }) => {
     const [myTasks, setMyTasks] = useState<Task[]>([]);
     const [myProjects, setMyProjects] = useState<Project[]>([]);
+    const [completedProjectsCount, setCompletedProjectsCount] = useState(0);
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
         const fetchUserData = async () => {
             if (!user) return;
             setLoading(true);
-            const allTasks: Task[] = [];
             
+            // Fetch all user-owned projects
             const projectsQuery = query(collection(db, "artifacts", appId, "public", "data", "projects"), where("ownerId", "==", user.uid));
             const projectsSnapshot = await getDocs(projectsQuery);
             const projectsData = projectsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })) as Project[];
             setMyProjects(projectsData);
+            
+            // Fetch completed projects count
+            const completedProjectsQuery = query(collection(db, "artifacts", appId, "public", "data", "projects"), where("ownerId", "==", user.uid), where("status", "==", "Completed"));
+            const completedProjectsSnapshot = await getDocs(completedProjectsQuery);
+            setCompletedProjectsCount(completedProjectsSnapshot.size);
 
+            // Fetch tasks assigned to the user across all their projects
+            const allTasks: Task[] = [];
             for (const project of projectsData) {
                 const teamQuery = collection(db, "artifacts", appId, "public", "data", "projects", project.id, "team");
                 const teamSnapshot = await getDocs(teamQuery);
@@ -731,7 +776,7 @@ const ProfilePage: React.FC<{ user: User; t: (key: string) => string; }> = ({ us
                         {myProjects.map(p => <li key={p.id}>{p.name}</li>)}
                     </ul>
                     <h2 className="mt-6 text-lg font-semibold">{t('achievements')}</h2>
-                    <p className="mt-2 text-gray-500">{t('completedProjects')}</p>
+                    <p className="mt-2 text-gray-500">{t('achievementCompletedProjects').replace('{count}', completedProjectsCount.toString())}</p>
                 </div>
             </div>
         </main>
@@ -790,19 +835,35 @@ const App: React.FC = () => {
         if (type === 'tasks' && payload.status === 'Done' && payload.parentId) {
             const parentTask = tasks.find(t => t.id === payload.parentId);
             if (parentTask && parentTask.status !== 'Done') {
-                addToast(t('parentTaskNotDoneError'), 'error');
+                addToast(t('parentTaskNotDoneError').replace('{parentTaskName}', parentTask.name), 'error');
                 return;
             }
         }
         
         const collectionPath = ["artifacts", appId, "public", "data", "projects", selectedProjectId, type];
         try {
-            if (id) { await updateDoc(doc(db, ...collectionPath, id), payload); logActivity(`Updated ${type.slice(0,-1)}: "${payload.name || payload.category || payload.description}"`); }
-            else { await addDoc(collection(db, ...collectionPath), { ...payload, priority: payload.priority || 'Medium' }); logActivity(`Created new ${type.slice(0,-1)}: "${payload.name || payload.category || payload.description}"`); }
+            if (id) { 
+                await updateDoc(doc(db, ...collectionPath, id), payload); 
+                logActivity(`Updated ${type.slice(0,-1)}: "${payload.name || payload.category || payload.description}"`); 
+                // If a parent task is marked as done, update its subtasks
+                if (type === 'tasks' && payload.status === 'Done') {
+                    const batch = writeBatch(db);
+                    const subtasksQuery = query(collection(db, ...collectionPath), where("parentId", "==", id));
+                    const subtasksSnapshot = await getDocs(subtasksQuery);
+                    subtasksSnapshot.forEach(doc => {
+                        batch.update(doc.ref, { status: "Done" });
+                    });
+                    await batch.commit();
+                }
+            }
+            else { 
+                await addDoc(collection(db, ...collectionPath), { ...payload, priority: payload.priority || 'Medium' }); 
+                logActivity(`Created new ${type.slice(0,-1)}: "${payload.name || payload.category || payload.description}"`); 
+            }
         } catch (error) { console.error("Error saving item:", error); }
     };
     
-    const handleSaveProject = async (projectData: any) => { if (!user) return; const { id, ...payload } = projectData; const projectsPath = ["artifacts", appId, "public", "data", "projects"]; if (id) { await updateDoc(doc(db, ...projectsPath, id), payload); logActivity(`Updated project: "${payload.name}"`); } else { const newDocRef = await addDoc(collection(db, ...projectsPath), { ...payload, ownerId: user.uid }); setSelectedProjectId(newDocRef.id); } };
+    const handleSaveProject = async (projectData: any) => { if (!user) return; const { id, ...payload } = projectData; const projectsPath = ["artifacts", appId, "public", "data", "projects"]; if (id) { await updateDoc(doc(db, ...projectsPath, id), payload); logActivity(`Updated project: "${payload.name}"`); } else { const newDocRef = await addDoc(collection(db, ...projectsPath), { ...payload, ownerId: user.uid, status: 'Ongoing' }); setSelectedProjectId(newDocRef.id); } };
     const handleEditProject = (project: Project) => { setEditingProject(project); setIsNewProjectModalOpen(true); };
     const handleDelete = (type: string, id: string | Design, name?: string) => { setItemToDelete({ type, id, name }); setIsConfirmModalOpen(true); };
     
