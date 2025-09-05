@@ -54,16 +54,17 @@ const translations = {
     "newProject": "New Project", "editProject": "Edit Project", "projectName": "Project Name", "description": "Description", "startDate": "Start Date", "endDate": "End Date", "createProject": "Create Project", "updateProject": "Update Project",
     "deleteProjectTitle": "Delete Project", "deleteProjectMessage": "Are you sure you want to delete this project? This will permanently delete all associated tasks, team members, budget items, risks, and designs. This action cannot be undone.",
     "deleteItemTitle": "Confirm Deletion", "deleteItemMessage": "Are you sure? This cannot be undone.",
-    "addTask": "Add Task", "editTask": "Edit Task", "taskName": "Task Name", "status": "Status", "assignee": "Assignee", "dueDate": "Due Date",
+    "addTask": "Add Task", "editTask": "Edit Task", "taskName": "Task Name", "status": "Status", "assignee": "Assignee", "dueDate": "Due Date", "progress": "Progress", "reminderDate": "Reminder Date",
     "addTeamMember": "Add Team Member", "editTeamMember": "Edit Team Member", "memberName": "Member Name", "role": "Role",
     "addBudgetItem": "Add Budget Item", "editBudgetItem": "Edit Budget Item", "category": "Category", "allocatedBudget": "Allocated Budget", "spentBudget": "Amount Spent",
     "addRisk": "Add Risk", "editRisk": "Edit Risk", "likelihood": "Likelihood", "impact": "Impact", "mitigation": "Mitigation Strategy",
     "editDesign": "Edit Design", "designName": "Design Name",
     "parentTaskNotDoneError": "Cannot complete this task. Please finish parent task '{parentTaskName}' first.",
+    "reminderToast": "Reminder for task: \"{taskName}\"",
     // Pages
     "noProjectSelected": "No Project Selected", "noProjectMessage": "Please select a project to begin.",
     "dashboardTitle": "Dashboard: {projectName}",
-    "totalTasks": "Total Tasks", "teamMembers": "Team Members", "openRisks": "Open Risks", "budgetSpent": "Budget Spent", "taskStatus": "Task Status", "budgetOverview": "Budget Overview",
+    "totalTasks": "Total Tasks", "teamMembers": "Team Members", "openRisks": "Open Risks", "budgetSpent": "Budget Spent", "taskStatus": "Task Status", "budgetOverview": "Budget Overview", "avgProjectProgress": "Avg. Project Progress",
     "tasksTitle": "Tasks for {projectName}", "noTasks": "No Tasks", "noTasksMessage": "Get started by creating a new task.",
     "teamTitle": "Team for {projectName}", "noTeam": "No Team Members", "noTeamMessage": "Add team members to your project.",
     "budgetTitle": "Budget for {projectName}", "noBudget": "No Budget Items", "noBudgetMessage": "Add budget items to track project expenses.", "allocated": "Allocated", "spent": "Spent", "remaining": "Remaining", "total": "Total",
@@ -90,16 +91,17 @@ const translations = {
     "newProject": "مشروع جديد", "editProject": "تعديل المشروع", "projectName": "اسم المشروع", "description": "الوصف", "startDate": "تاريخ البدء", "endDate": "تاريخ الانتهاء", "createProject": "إنشاء مشروع", "updateProject": "تحديث المشروع",
     "deleteProjectTitle": "حذف المشروع", "deleteProjectMessage": "هل أنت متأكد أنك تريد حذف هذا المشروع؟ سيؤدي هذا إلى حذف جميع المهام وأعضاء الفريق وبنود الميزانية والمخاطر والتصاميم المرتبطة به بشكل دائم. لا يمكن التراجع عن هذا الإجراء.",
     "deleteItemTitle": "تأكيد الحذف", "deleteItemMessage": "هل أنت متأكد؟ لا يمكن التراجع عن هذا.",
-    "addTask": "إضافة مهمة", "editTask": "تعديل المهمة", "taskName": "اسم المهمة", "status": "الحالة", "assignee": "المسؤول", "dueDate": "تاريخ الاستحقاق",
+    "addTask": "إضافة مهمة", "editTask": "تعديل المهمة", "taskName": "اسم المهمة", "status": "الحالة", "assignee": "المسؤول", "dueDate": "تاريخ الاستحقاق", "progress": "التقدم", "reminderDate": "تاريخ التذكير",
     "addTeamMember": "إضافة عضو للفريق", "editTeamMember": "تعديل عضو الفريق", "memberName": "اسم العضو", "role": "الدور",
     "addBudgetItem": "إضافة بند ميزانية", "editBudgetItem": "تعديل بند الميزانية", "category": "الفئة", "allocatedBudget": "الميزانية المخصصة", "spentBudget": "المبلغ المصروف",
     "addRisk": "إضافة مخاطرة", "editRisk": "تعديل المخاطرة", "likelihood": "الاحتمالية", "impact": "التأثير", "mitigation": "استراتيجية التخفيف",
     "editDesign": "تعديل التصميم", "designName": "اسم التصميم",
     "parentTaskNotDoneError": "لا يمكن إكمال هذه المهمة. يرجى إنهاء المهمة الرئيسية '{parentTaskName}' أولاً.",
+    "reminderToast": "تذكير للمهمة: \"{taskName}\"",
     // Pages
     "noProjectSelected": "لم يتم تحديد مشروع", "noProjectMessage": "يرجى تحديد مشروع للبدء.",
     "dashboardTitle": "لوحة التحكم: {projectName}",
-    "totalTasks": "إجمالي المهام", "teamMembers": "أعضاء الفريق", "openRisks": "المخاطر القائمة", "budgetSpent": "الميزانية المصروفة", "taskStatus": "حالة المهام", "budgetOverview": "نظرة عامة على الميزانية",
+    "totalTasks": "إجمالي المهام", "teamMembers": "أعضاء الفريق", "openRisks": "المخاطر القائمة", "budgetSpent": "الميزانية المصروفة", "taskStatus": "حالة المهام", "budgetOverview": "نظرة عامة على الميزانية", "avgProjectProgress": "متوسط تقدم المشروع",
     "tasksTitle": "مهام مشروع {projectName}", "noTasks": "لا توجد مهام", "noTasksMessage": "ابدأ بإنشاء مهمة جديدة.",
     "teamTitle": "فريق مشروع {projectName}", "noTeam": "لا يوجد أعضاء في الفريق", "noTeamMessage": "أضف أعضاء الفريق إلى مشروعك.",
     "budgetTitle": "ميزانية مشروع {projectName}", "noBudget": "لا توجد بنود في الميزانية", "noBudgetMessage": "أضف بنود الميزانية لتتبع نفقات المشروع.", "allocated": "المخصص", "spent": "المصروف", "remaining": "المتبقي", "total": "الإجمالي",
@@ -132,6 +134,8 @@ export interface Task {
   projectName?: string; // for profile page
   priority: Priority;
   parentId?: string | null;
+  progress?: number;
+  reminderDate?: string;
 }
 
 export interface TeamMember {
@@ -207,6 +211,7 @@ const Toast: React.FC<ToastMessage> = ({ message, type }) => {
 
 // 7. HELPER FUNCTIONS
 export const formatDate = (dateString: string, locale: Locale): string => {
+  if (!dateString) return '';
   const options: Intl.DateTimeFormatOptions = { year: 'numeric', month: 'long', day: 'numeric' };
   return new Date(dateString).toLocaleDateString(locale === 'ar' ? 'ar-EG' : 'en-US', options);
 };
@@ -359,11 +364,14 @@ const NewProjectModal: React.FC<{ isOpen: boolean; onClose: () => void; onSave: 
 };
 const TaskModal: React.FC<{ isOpen: boolean; onClose: () => void; onSave: (task: Omit<Task, 'id'> | Task) => void; editingTask: Task | null; team: TeamMember[]; tasks: Task[]; t: (key: string) => string; }> = ({ isOpen, onClose, onSave, editingTask, team, tasks, t }) => {
     const [name, setName] = useState(''); const [description, setDescription] = useState(''); const [status, setStatus] = useState<Status>('To Do'); const [dueDate, setDueDate] = useState(''); const [assigneeId, setAssigneeId] = useState<string | undefined>(undefined); const [priority, setPriority] = useState<Priority>('Medium'); const [parentId, setParentId] = useState<string | undefined>(undefined);
+    const [progress, setProgress] = useState(0);
+    const [reminderDate, setReminderDate] = useState('');
+
     useEffect(() => {
-        if (editingTask) { setName(editingTask.name); setDescription(editingTask.description); setStatus(editingTask.status); setDueDate(new Date(editingTask.dueDate).toISOString().split('T')[0]); setAssigneeId(editingTask.assigneeId); setPriority(editingTask.priority); setParentId(editingTask.parentId ?? undefined); }
-        else { setName(''); setDescription(''); setStatus('To Do'); setDueDate(''); setAssigneeId(undefined); setPriority('Medium'); setParentId(undefined); }
+        if (editingTask) { setName(editingTask.name); setDescription(editingTask.description); setStatus(editingTask.status); setDueDate(new Date(editingTask.dueDate).toISOString().split('T')[0]); setAssigneeId(editingTask.assigneeId); setPriority(editingTask.priority); setParentId(editingTask.parentId ?? undefined); setProgress(editingTask.progress || 0); setReminderDate(editingTask.reminderDate ? new Date(editingTask.reminderDate).toISOString().split('T')[0] : ''); }
+        else { setName(''); setDescription(''); setStatus('To Do'); setDueDate(''); setAssigneeId(undefined); setPriority('Medium'); setParentId(undefined); setProgress(0); setReminderDate(''); }
     }, [editingTask, isOpen]);
-    const handleSubmit = (e: React.FormEvent) => { e.preventDefault(); const taskData = { name, description, status, dueDate, assigneeId, priority, parentId }; onSave(editingTask ? { ...taskData, id: editingTask.id } : taskData); onClose(); };
+    const handleSubmit = (e: React.FormEvent) => { e.preventDefault(); const taskData = { name, description, status, dueDate, assigneeId, priority, parentId, progress, reminderDate }; onSave(editingTask ? { ...taskData, id: editingTask.id } : taskData); onClose(); };
     return (
       <AnimatePresence> {isOpen && (<div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
         <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.9 }} className="w-full max-w-lg p-6 bg-white rounded-xl shadow-xl dark:bg-dark-secondary">
@@ -377,7 +385,14 @@ const TaskModal: React.FC<{ isOpen: boolean; onClose: () => void; onSave: (task:
                 <select value={priority} onChange={e => setPriority(e.target.value as Priority)} className={inputStyle}> <option value="Low">{t('low')}</option><option value="Medium">{t('medium')}</option><option value="High">{t('high')}</option><option value="Urgent">{t('urgent')}</option> </select>
                 <select value={parentId || ''} onChange={e => setParentId(e.target.value)} className={inputStyle}> <option value="">{t('parentTask')}</option> {tasks.filter(t => t.id !== editingTask?.id).map(task => <option key={task.id} value={task.id}>{task.name}</option>)} </select>
             </div>
-            <input type="date" value={dueDate} onChange={e => setDueDate(e.target.value)} required className={inputStyle}/>
+            <div className="grid grid-cols-2 gap-4">
+                <div><label className={labelStyle}>{t('dueDate')}</label><input type="date" value={dueDate} onChange={e => setDueDate(e.target.value)} required className={inputStyle}/></div>
+                <div><label className={labelStyle}>{t('reminderDate')}</label><input type="date" value={reminderDate} onChange={e => setReminderDate(e.target.value)} className={inputStyle}/></div>
+            </div>
+            <div>
+              <label className={`${labelStyle} mb-1`}>{t('progress')}: {progress}%</label>
+              <input type="range" min="0" max="100" value={progress} onChange={e => setProgress(Number(e.target.value))} className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer dark:bg-gray-700" />
+            </div>
             <div className="flex justify-end pt-2 space-x-2"> <button type="button" onClick={onClose} className={btnSecondaryStyle}>{t('cancel')}</button> <button type="submit" className={btnPrimaryStyle}>{t('save')}</button> </div>
           </form>
         </motion.div></div>)} </AnimatePresence>
@@ -427,11 +442,14 @@ const DashboardPage: React.FC<{ project: Project | null; tasks: Task[]; team: Te
     if (!project) return <main className="flex-1 p-6 overflow-y-auto"><EmptyState title={t('noProjectSelected')} message={t('noProjectMessage')} /></main>;
     const tasksByStatus = tasks.reduce((acc, task) => { acc[task.status] = (acc[task.status] || 0) + 1; return acc; }, {} as Record<string, number>);
     const budgetOverview = { allocated: budget.reduce((sum, item) => sum + item.allocated, 0), spent: budget.reduce((sum, item) => sum + item.spent, 0) };
+    const totalProgress = tasks.reduce((sum, task) => sum + (task.progress || 0), 0);
+    const avgProgress = tasks.length > 0 ? (totalProgress / tasks.length).toFixed(0) : 0;
+    
     const cardData = [
         { title: t('totalTasks'), value: tasks.length.toString(), icon: <CheckSquare size={24} />, color: '#3B82F6' },
         { title: t('teamMembers'), value: team.length.toString(), icon: <Users size={24} />, color: '#10B981' },
         { title: t('openRisks'), value: risks.length.toString(), icon: <AlertTriangle size={24} />, color: '#F59E0B' },
-        { title: t('budgetSpent'), value: formatCurrencyEGP(budgetOverview.spent, locale), icon: <DollarSign size={24} />, color: '#EF4444' },
+        { title: t('avgProjectProgress'), value: `${avgProgress}%`, icon: <div className="font-bold text-lg">{avgProgress}%</div>, color: '#6366F1' },
     ];
     const taskStatusData = { labels: Object.keys(tasksByStatus), datasets: [{ data: Object.values(tasksByStatus), backgroundColor: ['#9CA3AF', '#3B82F6', '#10B981', '#F59E0B'] }] };
     const budgetData = { labels: [t('spent'), t('remaining')], datasets: [{ data: [budgetOverview.spent, budgetOverview.allocated - budgetOverview.spent], backgroundColor: ['#EF4444', '#10B981'] }] };
@@ -497,7 +515,7 @@ const TasksPage: React.FC<{ project: Project | null; tasks: Task[]; team: TeamMe
                         <p className="mt-2 text-sm text-gray-600 dark:text-gray-400">{task.description}</p>
                         <div className="flex items-center mt-2 space-x-4">
                             <span className={`px-2 py-0.5 text-xs font-semibold rounded-full ${getPriorityStyles(task.priority).color} ${getPriorityStyles(task.priority).text}`}>{t(task.priority.toLowerCase())}</span>
-                            <p className="text-xs text-gray-500 dark:text-gray-500">{t('dueDate')}: {formatDate(task.dueDate, locale)}</p>
+                            <p className="flex items-center text-xs text-gray-500 dark:text-gray-500">{t('dueDate')}: {formatDate(task.dueDate, locale)} {task.reminderDate && <Bell size={12} className="ml-1 text-yellow-500" />}</p>
                             {task.parentId && <span className="flex items-center text-xs text-gray-500"><Link2 size={12} className="mr-1"/> {t('parent')}</span>}
                         </div>
                     </div>
@@ -509,6 +527,17 @@ const TasksPage: React.FC<{ project: Project | null; tasks: Task[]; team: TeamMe
                         </div>
                     </div>
                 </div>
+                { (task.progress !== undefined && task.progress > 0) &&
+                  <div className="mt-3">
+                    <div className="flex justify-between mb-1">
+                        <span className="text-xs font-medium text-primary dark:text-white">{t('progress')}</span>
+                        <span className="text-xs font-medium text-primary dark:text-white">{task.progress}%</span>
+                    </div>
+                    <div className="w-full bg-gray-200 rounded-full h-1.5 dark:bg-gray-700">
+                        <div className="bg-primary h-1.5 rounded-full" style={{width: `${task.progress}%`}}></div>
+                    </div>
+                  </div>
+                }
             </div>
             {task.children.length > 0 && <div className="mt-2 space-y-2 border-l-2 border-primary-light pl-2">{task.children.map(child => renderTask(child, level + 1))}</div>}
         </motion.div>
@@ -894,7 +923,8 @@ const App: React.FC = () => {
     const [isNewProjectModalOpen, setIsNewProjectModalOpen] = useState(false); const [isTaskModalOpen, setIsTaskModalOpen] = useState(false); const [isTeamMemberModalOpen, setIsTeamMemberModalOpen] = useState(false); const [isBudgetItemModalOpen, setIsBudgetItemModalOpen] = useState(false); const [isRiskModalOpen, setIsRiskModalOpen] = useState(false); const [isDesignModalOpen, setIsDesignModalOpen] = useState(false); const [isConfirmModalOpen, setIsConfirmModalOpen] = useState(false);
     const [editingProject, setEditingProject] = useState<Project | null>(null); const [editingTask, setEditingTask] = useState<Task | null>(null); const [editingMember, setEditingMember] = useState<TeamMember | null>(null); const [editingBudgetItem, setEditingBudgetItem] = useState<BudgetItem | null>(null); const [editingRisk, setEditingRisk] = useState<Risk | null>(null); const [editingDesign, setEditingDesign] = useState<Design | null>(null);
     const [itemToDelete, setItemToDelete] = useState<{ type: string; id: string | Design; name?: string; } | null>(null);
-    
+    const [notifiedReminders, setNotifiedReminders] = useState<Set<string>>(new Set());
+
     const { addToast } = useToast();
     const t = (key: string) => (translations[locale] as any)[key] || key;
 
@@ -928,6 +958,28 @@ const App: React.FC = () => {
     }, [user]);
 
     useEffect(() => { if (!selectedProjectId) { setTasks([]); setTeam([]); setBudget([]); setRisks([]); setDesigns([]); setActivityLogs([]); return; } const subCollections = ["tasks", "team", "budget", "risks", "designs", "activity_logs"]; const setters:any = { tasks: setTasks, team: setTeam, budget: setBudget, risks: setRisks, designs: setDesigns, activity_logs: setActivityLogs }; const unsubs = subCollections.map(col => { const colQuery = col === 'activity_logs' ? query(collection(db, "artifacts", appId, "public", "data", "projects", selectedProjectId, col), orderBy("timestamp", "desc")) : collection(db, "artifacts", appId, "public", "data", "projects", selectedProjectId, col); return onSnapshot(colQuery, snapshot => { const data = snapshot.docs.map(d => ({id: d.id, ...d.data()})); setters[col](data); }); }); return () => unsubs.forEach(unsub => unsub()); }, [selectedProjectId]);
+    
+    // Reset reminders when project changes
+    useEffect(() => {
+        setNotifiedReminders(new Set());
+    }, [selectedProjectId]);
+    
+    // Check for reminders
+    useEffect(() => {
+        const now = new Date();
+        now.setHours(23, 59, 59, 999); // Compare against end of today
+
+        tasks.forEach(task => {
+            if (task.reminderDate && task.status !== 'Done' && !notifiedReminders.has(task.id)) {
+                const reminderDateTime = new Date(task.reminderDate);
+                if (reminderDateTime <= now) {
+                    addToast(t('reminderToast').replace('{taskName}', task.name), 'info');
+                    setNotifiedReminders(prev => new Set(prev).add(task.id));
+                }
+            }
+        });
+    }, [tasks, addToast, t, notifiedReminders]);
+
 
     const toggleTheme = () => setTheme(prev => prev === 'light' ? 'dark' : 'light'); const toggleLocale = () => setLocale(prev => prev === 'en' ? 'ar' : 'en'); const handleSignOut = () => signOut(auth);
     
