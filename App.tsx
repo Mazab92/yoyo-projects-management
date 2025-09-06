@@ -16,7 +16,6 @@ import {
 import { Bar, Pie, Line } from 'react-chartjs-2';
 import { Chart as ChartJS, CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend, ArcElement, PointElement, LineElement } from 'chart.js';
 import { motion, AnimatePresence } from 'framer-motion';
-import { GoogleOAuthProvider, useGoogleLogin } from '@react-oauth/google';
 
 // 2. CHART.JS REGISTRATION
 ChartJS.register(CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend, ArcElement, PointElement, LineElement);
@@ -439,8 +438,10 @@ const DesignsPage: React.FC<{ t: (key: string) => string; locale: Locale }> = ({
     const [isUploading, setIsUploading] = useState(false);
     const fileInputRef = useRef<HTMLInputElement>(null);
 
+    const useGoogleLogin = (window as any).ReactOAuthGoogle.useGoogleLogin;
+
     const login = useGoogleLogin({
-        onSuccess: (tokenResponse) => setToken(tokenResponse),
+        onSuccess: (tokenResponse: any) => setToken(tokenResponse),
         scope: 'https://www.googleapis.com/auth/drive.file',
     });
 
@@ -595,6 +596,8 @@ const App = () => {
 
     const t = (key: string) => (translations[locale] as any)[key] || key;
 
+    const GoogleOAuthProvider = (window as any).ReactOAuthGoogle?.GoogleOAuthProvider;
+
     useEffect(() => {
         document.documentElement.classList.toggle('dark', theme === 'dark');
         localStorage.setItem('theme', theme);
@@ -652,6 +655,10 @@ const App = () => {
 
     if (!user) {
         return <LoginPage onLogin={handleLogin} t={t} />;
+    }
+
+    if (!GoogleOAuthProvider) {
+        return <div className="flex items-center justify-center w-full h-screen bg-gray-50 dark:bg-dark-primary"><BouncingLoader /></div>;
     }
     
     return (
