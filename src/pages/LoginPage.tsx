@@ -4,23 +4,38 @@ import BouncingLoader from '../components/BouncingLoader';
 
 interface LoginPageProps {
     onLogin: (email: string, pass: string) => Promise<any>;
+    onSignUp: (email: string, pass: string) => Promise<any>;
     t: (key: string) => string;
 }
 
-const LoginPage: React.FC<LoginPageProps> = ({ onLogin, t }) => {
+const LoginPage: React.FC<LoginPageProps> = ({ onLogin, onSignUp, t }) => {
     const [email, setEmail] = useState('test@yoyo.com');
     const [password, setPassword] = useState('123456');
     const [error, setError] = useState('');
     const [isLoading, setIsLoading] = useState(false);
+    const [isSignUp, setIsSignUp] = useState(false);
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         setError('');
         setIsLoading(true);
         try {
-            await onLogin(email, password);
+            if (isSignUp) {
+                await onSignUp(email, password);
+            } else {
+                await onLogin(email, password);
+            }
         } catch (err: any) {
-            setError(err.message || 'Failed to sign in. Please check your credentials.');
+            let message = err.message || 'An unknown error occurred.';
+            // Improve Firebase error messages for users
+            if (message.includes('auth/email-already-in-use')) {
+                message = 'This email is already in use. Please log in or use a different email.';
+            } else if (message.includes('auth/wrong-password') || message.includes('auth/user-not-found') || message.includes('auth/invalid-credential')) {
+                message = 'Invalid email or password. Please try again.';
+            } else if (message.includes('auth/weak-password')) {
+                message = 'Password should be at least 6 characters.';
+            }
+            setError(message);
         } finally {
             setIsLoading(false);
         }
@@ -35,7 +50,7 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLogin, t }) => {
             >
                 <div className="text-center">
                     <h1 className="text-3xl font-bold text-primary">ProjectHub</h1>
-                    <p className="mt-2 text-gray-600 dark:text-gray-400">{t('loginTitle')}</p>
+                    <p className="mt-2 text-gray-600 dark:text-gray-400">{t(isSignUp ? 'signUpTitle' : 'loginTitle')}</p>
                 </div>
                 <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
                     <div className="space-y-4 rounded-md shadow-sm">
@@ -51,10 +66,15 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLogin, t }) => {
                     {error && <p className="text-sm text-center text-red-500">{error}</p>}
                     <div>
                         <button type="submit" disabled={isLoading} className="relative flex justify-center w-full px-4 py-2 text-sm font-medium text-white border border-transparent rounded-md group bg-primary hover:bg-primary-dark focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-dark disabled:opacity-50 h-10 items-center">
-                            {isLoading ? <BouncingLoader /> : t('logIn')}
+                            {isLoading ? <BouncingLoader /> : t(isSignUp ? 'signUp' : 'logIn')}
                         </button>
                     </div>
                 </form>
+                <div className="text-sm text-center">
+                    <button onClick={() => { setIsSignUp(!isSignUp); setError(''); }} className="font-medium text-primary hover:text-primary-dark focus:outline-none">
+                        {isSignUp ? t('alreadyHaveAccount') : t('dontHaveAccount')}
+                    </button>
+                </div>
             </motion.div>
         </div>
     );

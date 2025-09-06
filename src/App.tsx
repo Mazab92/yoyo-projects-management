@@ -5,7 +5,9 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 // import { onAuthStateChanged, signInWithEmailAndPassword, signOut } from 'firebase/auth';
 // import type { User } from 'firebase/auth';
 // FIX: Import User type from compat library.
-import type { User } from 'firebase/compat/auth';
+// import type { User } from 'firebase/compat/auth';
+// FIX: The User type is not a named export from 'firebase/compat/auth'. It must be accessed via the firebase namespace.
+import firebase from 'firebase/compat/app';
 import { 
     collection, onSnapshot, doc, addDoc, updateDoc, writeBatch, query, where, getDocs, serverTimestamp, setDoc, getDoc, Timestamp
 } from 'firebase/firestore';
@@ -40,7 +42,8 @@ import SettingsPage from './pages/Settings';
 import ProfilePage from './pages/Profile';
 
 const AppContainer = () => {
-    const [user, setUser] = useState<User | null>(null);
+    // FIX: Use firebase.User type from the firebase namespace.
+    const [user, setUser] = useState<firebase.User | null>(null);
     const [loading, setLoading] = useState(true);
     const [theme, setTheme] = useState<'light' | 'dark'>(() => (localStorage.getItem('theme') as 'light' | 'dark') || 'light');
     const [locale, setLocale] = useState<Locale>(() => (localStorage.getItem('locale') as Locale) || 'en');
@@ -158,6 +161,23 @@ const AppContainer = () => {
 
     // FIX: Use auth.signInWithEmailAndPassword from compat API.
     const handleLogin = (email: string, pass: string) => auth.signInWithEmailAndPassword(email, pass);
+    
+    const handleSignUp = async (email: string, pass: string) => {
+        const userCredential = await auth.createUserWithEmailAndPassword(email, pass);
+        const newUser = userCredential.user;
+        if (newUser) {
+            // Immediately create the user document in Firestore to ensure sync
+            const userDocRef = doc(db, 'users', newUser.uid);
+            await setDoc(userDocRef, {
+                name: newUser.email?.split('@')[0] || 'New User',
+                email: newUser.email,
+                role: 'Member',
+                projects: [],
+            });
+        }
+        return userCredential;
+    };
+
     // FIX: Use auth.signOut from compat API.
     const handleSignOut = () => auth.signOut();
     const toggleTheme = () => setTheme(prev => prev === 'light' ? 'dark' : 'light');
@@ -253,7 +273,7 @@ const AppContainer = () => {
     }
 
     if (!user) {
-        return <LoginPage onLogin={handleLogin} t={t} />;
+        return <LoginPage onLogin={handleLogin} onSignUp={handleSignUp} t={t} />;
     }
     
     return (

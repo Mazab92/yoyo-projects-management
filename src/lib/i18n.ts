@@ -10,6 +10,7 @@ export const translations: Record<Locale, Record<string, string>> = {
     "signOut": "Sign Out", "profile": "Profile",
     // Login
     "loginTitle": "ProjectHub Login", "email": "Email", "password": "Password", "logIn": "Log In", "fetchProjectsError": "Failed to fetch projects: {message}",
+    "signUpTitle": "Create your ProjectHub Account", "signUp": "Sign Up", "dontHaveAccount": "Don't have an account? Sign Up", "alreadyHaveAccount": "Already have an account? Log In",
     // Modals
     "newProject": "New Project", "editProject": "Edit Project", "projectName": "Project Name", "description": "Description", "startDate": "Start Date", "endDate": "End Date", "createProject": "Create Project", "updateProject": "Update Project",
     "deleteProjectTitle": "Delete Project", "deleteProjectMessage": "Are you sure you want to delete this project? This will permanently delete all associated tasks, team members, budget items, and risks. This action cannot be undone.",
@@ -51,6 +52,7 @@ export const translations: Record<Locale, Record<string, string>> = {
     "signOut": "تسجيل الخروج", "profile": "الملف الشخصي",
     // Login
     "loginTitle": "تسجيل الدخول إلى ProjectHub", "email": "البريد الإلكتروني", "password": "كلمة المرور", "logIn": "تسجيل الدخول", "fetchProjectsError": "فشل في جلب المشاريع: {message}",
+    "signUpTitle": "أنشئ حسابك في ProjectHub", "signUp": "إنشاء حساب", "dontHaveAccount": "ليس لديك حساب؟ إنشاء حساب", "alreadyHaveAccount": "لديك حساب بالفعل؟ تسجيل الدخول",
     // Modals
     "newProject": "مشروع جديد", "editProject": "تعديل المشروع", "projectName": "اسم المشروع", "description": "الوصف", "startDate": "تاريخ البدء", "endDate": "تاريخ الانتهاء", "createProject": "إنشاء مشروع", "updateProject": "تحديث المشروع",
     "deleteProjectTitle": "حذف المشروع", "deleteProjectMessage": "هل أنت متأكد أنك تريد حذف هذا المشروع؟ سيؤدي هذا إلى حذف جميع المهام وأعضاء الفريق وبنود الميزانية والمخاطر المرتبطة به بشكل دائم. لا يمكن التراجع عن هذا الإجراء.",

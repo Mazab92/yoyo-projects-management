@@ -2,7 +2,9 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 // Fix: Separated Firebase 'User' type import from function imports.
 // FIX: Use User type from firebase/compat/auth
-import type { User } from 'firebase/compat/auth';
+// import type { User } from 'firebase/compat/auth';
+// FIX: The User type is not a named export from 'firebase/compat/auth'. It must be accessed via the firebase namespace.
+import firebase from 'firebase/compat/app';
 import { LogOut, Menu, User as UserIcon } from 'lucide-react';
 import { motion } from 'framer-motion';
 import ThemeToggle from './ThemeToggle';
@@ -10,7 +12,8 @@ import LanguageSwitcher from './LanguageSwitcher';
 import { Locale } from '../types';
 
 interface HeaderProps {
-    user: User | null;
+    // FIX: Use firebase.User type from the firebase namespace.
+    user: firebase.User | null;
     onSignOut: () => void;
     onMenuClick: () => void;
     theme: 'light' | 'dark';

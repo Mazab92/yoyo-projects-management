@@ -1,7 +1,9 @@
 import React, { useState, useEffect } from 'react';
 // Fix: Separated Firebase 'User' type import from function imports.
 // FIX: Use User type from firebase/compat/auth
-import type { User as FirebaseUser } from 'firebase/compat/auth';
+// import type { User as FirebaseUser } from 'firebase/compat/auth';
+// FIX: The User type is not a named export from 'firebase/compat/auth'. It must be accessed via the firebase namespace.
+import firebase from 'firebase/compat/app';
 import { collection, query, where, onSnapshot } from 'firebase/firestore';
 import { db } from '../lib/firebase';
 import { Task, Project } from '../types';
@@ -10,7 +12,8 @@ import EmptyState from '../components/EmptyState';
 import { formatDateTime } from '../lib/helpers';
 
 interface ProfilePageProps {
-    user: FirebaseUser;
+    // FIX: Use firebase.User type from the firebase namespace.
+    user: firebase.User;
     t: (key: string) => string;
     locale: string;
 }
