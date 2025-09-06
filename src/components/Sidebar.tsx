@@ -12,7 +12,7 @@ interface SidebarProps {
     onSelectProject: (id: string) => void;
     onNewProject: () => void;
     onEditProject: (project: Project) => void;
-    onDeleteProject: (id: string) => void;
+    onDeleteProject: (project: Project) => void;
     isOpen: boolean;
     onClose: () => void;
     t: (key: string) => string;
@@ -41,7 +41,7 @@ const Sidebar: React.FC<SidebarProps> = ({ projects, selectedProjectId, onSelect
                         <span className="truncate">{project.name}</span>
                         <div className="flex items-center space-x-1 opacity-0 group-hover:opacity-100 transition-opacity">
                             <motion.button whileTap={{scale:0.9}} onClick={(e) => { e.stopPropagation(); onEditProject(project); }} className="p-1 rounded hover:bg-gray-200 dark:hover:bg-gray-600"> <Edit size={14} /> </motion.button>
-                            <motion.button whileTap={{scale:0.9}} onClick={(e) => { e.stopPropagation(); onDeleteProject(project.id); }} className="p-1 rounded hover:bg-gray-200 dark:hover:bg-gray-600"> <Trash2 size={14} /> </motion.button>
+                            <motion.button whileTap={{scale:0.9}} onClick={(e) => { e.stopPropagation(); onDeleteProject(project); }} className="p-1 rounded hover:bg-gray-200 dark:hover:bg-gray-600"> <Trash2 size={14} /> </motion.button>
                         </div>
                     </motion.div>
                   ))}

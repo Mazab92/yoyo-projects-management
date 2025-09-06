@@ -13,7 +13,7 @@ export const formatDateTime = (timestamp: any, locale: Locale): string => {
 };
 
 export const getStatusColor = (status: string): string => {
-  switch(status){case 'To Do':return 'bg-gray-400'; case 'In Progress':return 'bg-blue-500'; case 'Done':return 'bg-emerald-500'; case 'Archived':return 'bg-yellow-500'; default:return 'bg-gray-400';}
+  switch(status){case 'To Do':return 'bg-gray-400'; case 'In Progress':return 'bg-blue-500'; case 'Done':return 'bg-emerald-500'; default:return 'bg-gray-400';}
 };
 
 export const getPriorityStyles = (priority: Priority): { color: string, text: string } => {

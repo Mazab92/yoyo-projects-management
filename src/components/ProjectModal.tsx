@@ -5,7 +5,8 @@ import Modal from './Modal';
 interface ProjectModalProps {
     isOpen: boolean;
     onClose: () => void;
-    onSave: (project: Omit<Project, 'id' | 'ownerId' | 'members'>) => void;
+    // Fix: Corrected the Omit properties to match the Project type and the parent component's handler.
+    onSave: (project: Omit<Project, 'id' | 'createdBy' | 'team' | 'createdAt'>) => void;
     project: Project | null;
     t: (key: string) => string;
 }

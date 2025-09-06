@@ -1,39 +1,72 @@
 import { Timestamp } from 'firebase/firestore';
 
-export type Status = 'To Do' | 'In Progress' | 'Done' | 'Archived';
-export type Priority = 'Low' | 'Medium' | 'High' | 'Urgent';
+// Main Firestore Collection Interfaces
+export interface User {
+  id: string; // Firebase Auth UID
+  name: string;
+  email: string;
+  role: string;
+  avatar?: string;
+  projects: string[];
+}
 
-export interface Task {
+export interface Project {
   id: string;
   name: string;
   description: string;
-  status: Status;
-  dueDate: string;
-  assigneeId?: string;
+  createdBy: string; // User ID
+  team: string[]; // Array of User IDs
+  createdAt: Timestamp;
+  startDate: string; // Kept for UI consistency
+  endDate: string; // Kept for UI consistency
+}
+
+export type TaskStatus = 'To Do' | 'In Progress' | 'Done';
+
+// Fix: Added missing Priority type.
+export type Priority = 'Urgent' | 'High' | 'Medium' | 'Low';
+
+export interface Task {
+  id: string;
+  projectId: string;
+  title: string;
+  description: string;
+  assignedTo: string | null; // User ID
+  status: TaskStatus;
+  dueDate: Timestamp;
+}
+
+export type RiskSeverity = 'Low' | 'Medium' | 'High';
+
+export interface Risk {
+  id: string;
+  projectId: string;
+  description: string;
+  severity: RiskSeverity;
+  mitigation: string;
+}
+
+export interface BudgetItem {
+  id: string;
+  projectId: string;
+  category: string;
+  planned: number;
+  actual: number;
+}
+
+export interface ActivityLog {
+  id: string;
+  action: string;
+  userId: string;
+  userEmail?: string;
+  userName?: string;
   projectId?: string;
   projectName?: string;
-  priority: Priority;
-  parentId?: string | null;
-  progress?: number;
-  reminderDate?: string;
+  timestamp: Timestamp;
+  details?: Record<string, any>;
 }
 
-export interface TeamMember {
-  id:string; name:string; role:string; email:string; avatar:string;
-}
-export interface BudgetItem {
-    id:string; category:string; allocated:number; spent:number;
-}
-export interface Risk {
-    id:string; description:string; likelihood:'Low'|'Medium'|'High'; impact:'Low'|'Medium'|'High'; mitigation:string;
-}
-export interface Project {
-  id:string; ownerId:string; name:string; description:string; startDate:string; endDate:string; status?: string; members: string[];
-}
-export interface ActivityLog {
-  id:string; userEmail:string; action:string; timestamp: Timestamp;
-}
+// UI-related types
 export type ToastType = 'success' | 'error' | 'info';
 export interface ToastMessage { id: number; message: string; type: ToastType; }
-
 export type Locale = 'en' | 'ar';

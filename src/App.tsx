@@ -1,20 +1,22 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
-import { onAuthStateChanged, signInWithEmailAndPassword, signOut, User } from 'firebase/auth';
+// Fix: Separated Firebase 'User' type import from function imports.
+import { onAuthStateChanged, signInWithEmailAndPassword, signOut } from 'firebase/auth';
+import type { User } from 'firebase/auth';
 import { 
-    collection, onSnapshot, doc, addDoc, updateDoc, writeBatch, query, where, getDocs, serverTimestamp 
+    collection, onSnapshot, doc, addDoc, updateDoc, writeBatch, query, where, getDocs, serverTimestamp, setDoc, getDoc
 } from 'firebase/firestore';
+
 import { auth, db } from './lib/firebase';
+import { logActivity } from './lib/activityLog';
 import { translations } from './lib/i18n';
 import { Project, Locale } from './types';
 
-// FIX: `useToast` is a custom hook and should be imported from its own file.
 import { ToastProvider } from './context/ToastContext';
 import { useToast } from './hooks/useToast';
 import { ProjectContext } from './context/ProjectContext';
 
 import LoginPage from './pages/LoginPage';
-import PlaceholderPage from './pages/PlaceholderPage';
 import ProjectScope from './layouts/ProjectScope';
 
 import Sidebar from './components/Sidebar';
@@ -22,6 +24,17 @@ import Header from './components/Header';
 import BouncingLoader from './components/BouncingLoader';
 import ProjectModal from './components/ProjectModal';
 import ConfirmationModal from './components/ConfirmationModal';
+
+// Import newly implemented pages
+import Dashboard from './pages/Dashboard';
+import TasksPage from './pages/Tasks';
+import TeamPage from './pages/Team';
+import BudgetPage from './pages/Budget';
+import RisksPage from './pages/Risks';
+import CalendarPage from './pages/Calendar';
+import ReportsPage from './pages/Reports';
+import SettingsPage from './pages/Settings';
+import ProfilePage from './pages/Profile';
 
 const AppContainer = () => {
     const [user, setUser] = useState<User | null>(null);
@@ -40,13 +53,13 @@ const AppContainer = () => {
 
     const { addToast } = useToast();
     const currentProject = useMemo(() => projects.find(p => p.id === selectedProjectId) || null, [projects, selectedProjectId]);
-    const t = (key: string, params: Record<string, string> = {}) => {
+    const t = useCallback((key: string, params: Record<string, string> = {}) => {
         let translation = (translations[locale] as any)[key] || key;
         Object.keys(params).forEach(param => {
             translation = translation.replace(`{${param}}`, params[param]);
         });
         return translation;
-    };
+    }, [locale]);
 
     useEffect(() => {
         document.documentElement.classList.toggle('dark', theme === 'dark');
@@ -60,9 +73,21 @@ const AppContainer = () => {
     }, [locale]);
     
     useEffect(() => {
-        const unsubscribe = onAuthStateChanged(auth, (user) => {
-            setUser(user);
-            if (!user) {
+        const unsubscribe = onAuthStateChanged(auth, async (authUser) => {
+            if (authUser) {
+                const userDocRef = doc(db, 'users', authUser.uid);
+                const userDoc = await getDoc(userDocRef);
+                if (!userDoc.exists()) {
+                    await setDoc(userDocRef, {
+                        name: authUser.displayName || authUser.email?.split('@')[0] || 'New User',
+                        email: authUser.email,
+                        role: 'Member',
+                        projects: [],
+                    });
+                }
+            }
+            setUser(authUser);
+            if (!authUser) {
                 setSelectedProjectId(null);
                 setProjects([]);
             }
@@ -73,25 +98,29 @@ const AppContainer = () => {
 
     useEffect(() => {
         if (user) {
-            const q = query(collection(db, "projects"), where("members", "array-contains", user.uid));
+            const q = query(collection(db, "projects"), where("team", "array-contains", user.uid));
             const unsubscribe = onSnapshot(q, (querySnapshot) => {
                 const projectsData = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Project));
                 setProjects(projectsData);
-                if (projectsData.length > 0 && !projectsData.some(p => p.id === selectedProjectId)) {
-                    const newProjectId = projectsData[0].id;
-                    setSelectedProjectId(newProjectId);
-                    localStorage.setItem('selectedProjectId', newProjectId);
-                } else if (projectsData.length === 0) {
-                    setSelectedProjectId(null);
-                    localStorage.removeItem('selectedProjectId');
-                }
             }, (error) => {
                 console.error("Error fetching projects:", error);
                 addToast(t('fetchProjectsError', { message: error.message }), 'error');
             });
             return () => unsubscribe();
         }
-    }, [user, selectedProjectId, addToast, t]);
+    }, [user, addToast, t]);
+
+    useEffect(() => {
+        if (projects.length > 0 && !projects.some(p => p.id === selectedProjectId)) {
+            const newProjectId = projects[0].id;
+            setSelectedProjectId(newProjectId);
+            localStorage.setItem('selectedProjectId', newProjectId);
+        } else if (projects.length === 0 && selectedProjectId) {
+            setSelectedProjectId(null);
+            localStorage.removeItem('selectedProjectId');
+        }
+    }, [projects, selectedProjectId]);
+
 
     const handleLogin = (email: string, pass: string) => signInWithEmailAndPassword(auth, email, pass);
     const handleSignOut = () => signOut(auth);
@@ -103,7 +132,6 @@ const AppContainer = () => {
         setSidebarOpen(false);
     };
 
-    // --- CRUD Handlers ---
     const handleNewProject = () => {
         setProjectToEdit(null);
         setProjectModalOpen(true);
@@ -127,14 +155,14 @@ const AppContainer = () => {
             const projectRef = doc(db, 'projects', projectId);
             batch.delete(projectRef);
 
-            // Delete associated items in other collections (example)
-            const collectionsToDelete = ['tasks', 'team', 'budget', 'risks'];
+            const collectionsToDelete = ['tasks', 'team', 'budget', 'risks', 'activity_logs'];
             for (const coll of collectionsToDelete) {
                 const q = query(collection(db, coll), where('projectId', '==', projectId));
                 const snapshot = await getDocs(q);
                 snapshot.docs.forEach(doc => batch.delete(doc.ref));
             }
             await batch.commit();
+            await logActivity(`Deleted project: ${projectToDelete.name}`, { projectId });
             addToast(t('deleteProjectSuccess', { name: projectToDelete.name }), 'success');
         } catch (error) {
             console.error("Error deleting project: ", error);
@@ -145,20 +173,34 @@ const AppContainer = () => {
         }
     };
 
-    const handleSaveProject = async (projectData: Omit<Project, 'id' | 'ownerId' | 'members'>) => {
+    const handleSaveProject = async (projectData: Omit<Project, 'id' | 'createdBy' | 'team' | 'createdAt'>) => {
         if (!user) return;
         try {
-            if (projectToEdit) { // Update existing project
+            if (projectToEdit) {
                 const projectRef = doc(db, 'projects', projectToEdit.id);
                 await updateDoc(projectRef, projectData);
+                await logActivity(`Updated project: ${projectData.name}`, { projectId: projectToEdit.id });
                 addToast(t('saveProjectSuccess', { name: projectData.name }), 'success');
-            } else { // Create new project
-                await addDoc(collection(db, 'projects'), {
+            } else {
+                const newProject = {
                     ...projectData,
-                    ownerId: user.uid,
-                    members: [user.uid],
+                    createdBy: user.uid,
+                    team: [user.uid],
                     createdAt: serverTimestamp(),
-                });
+                };
+                const docRef = await addDoc(collection(db, 'projects'), newProject);
+                // Also add project to user's project list
+                const userDocRef = doc(db, 'users', user.uid);
+                const userDoc = await getDoc(userDocRef);
+                if (userDoc.exists()) {
+                    const userData = userDoc.data();
+                    const userProjects = userData.projects || [];
+                    await updateDoc(userDocRef, {
+                        projects: [...userProjects, docRef.id]
+                    });
+                }
+
+                await logActivity(`Created project: ${projectData.name}`, { projectId: docRef.id });
                 addToast(t('createProjectSuccess', { name: projectData.name }), 'success');
             }
         } catch (error) {
@@ -188,10 +230,7 @@ const AppContainer = () => {
                         onSelectProject={handleSelectProject}
                         onNewProject={handleNewProject}
                         onEditProject={handleEditProject}
-                        onDeleteProject={(id) => {
-                            const proj = projects.find(p => p.id === id);
-                            if(proj) handleDeleteProject(proj);
-                        }}
+                        onDeleteProject={handleDeleteProject}
                         isOpen={isSidebarOpen}
                         onClose={() => setSidebarOpen(false)}
                         t={t}
@@ -210,16 +249,16 @@ const AppContainer = () => {
                         <main className="flex-1 overflow-x-hidden overflow-y-auto bg-gray-50 dark:bg-dark-primary">
                             <Routes>
                                 <Route element={<ProjectScope t={t} />}>
-                                    <Route path="/" element={<PlaceholderPage title={t('dashboard')} />} />
-                                    <Route path="/tasks" element={<PlaceholderPage title={t('tasks')} />} />
-                                    <Route path="/calendar" element={<PlaceholderPage title={t('calendar')} />} />
-                                    <Route path="/team" element={<PlaceholderPage title={t('team')} />} />
-                                    <Route path="/budget" element={<PlaceholderPage title={t('budget')} />} />
-                                    <Route path="/risks" element={<PlaceholderPage title={t('risks')} />} />
-                                    <Route path="/reports" element={<PlaceholderPage title={t('reports')} />} />
-                                    <Route path="/settings" element={<PlaceholderPage title={t('settings')} />} />
+                                    <Route path="/" element={<Dashboard t={t} />} />
+                                    <Route path="/tasks" element={<TasksPage t={t} locale={locale} />} />
+                                    <Route path="/calendar" element={<CalendarPage t={t} locale={locale} />} />
+                                    <Route path="/team" element={<TeamPage t={t} />} />
+                                    <Route path="/budget" element={<BudgetPage t={t} locale={locale} />} />
+                                    <Route path="/risks" element={<RisksPage t={t} />} />
+                                    <Route path="/reports" element={<ReportsPage t={t} locale={locale} />} />
                                 </Route>
-                                <Route path="/profile" element={<PlaceholderPage title={t('profile')} />} />
+                                <Route path="/settings" element={<SettingsPage t={t} locale={locale} />} />
+                                <Route path="/profile" element={<ProfilePage user={user} t={t} locale={locale} />} />
                                 <Route path="*" element={<Navigate to="/" />} />
                             </Routes>
                         </main>
