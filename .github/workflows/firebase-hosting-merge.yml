@@ -1,44 +1,29 @@
 name: Deploy to Firebase Hosting on merge
-
 on:
   push:
     branches:
       - main
-
-permissions:
-  contents: 'read'
-  id-token: 'write'
-
 jobs:
   build_and_deploy:
     runs-on: ubuntu-latest
     steps:
-      - name: 'Checkout Repo'
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-      - name: 'Authenticate to Google Cloud'
-        uses: 'google-github-actions/auth@v2'
-        with:
-          workload_identity_provider: ${{ secrets.GCP_WORKLOAD_IDENTITY_PROVIDER }}
-          service_account: ${{ secrets.GCP_SERVICE_ACCOUNT }}
-
-      - name: 'Install Node.js'
-        uses: actions/setup-node@v4
-        with:
-          node-version: '20'
-
-      - name: 'Install Dependencies'
-        run: npm ci
-
-      - name: 'Build Project'
-        run: npm run build
+      - name: Install Dependencies & Build
+        run: npm ci && npm run build
         env:
           VITE_API_KEY: ${{ secrets.VITE_API_KEY }}
           VITE_AUTH_DOMAIN: ${{ secrets.VITE_AUTH_DOMAIN }}
           VITE_PROJECT_ID: ${{ secrets.VITE_PROJECT_ID }}
-          # ... and all your other VITE_ secrets
+          VITE_STORAGE_BUCKET: ${{ secrets.VITE_STORAGE_BUCKET }}
+          VITE_MESSAGING_SENDER_ID: ${{ secrets.VITE_MESSAGING_SENDER_ID }}
+          VITE_APP_ID: ${{ secrets.VITE_APP_ID }}
+          VITE_MEASUREMENT_ID: ${{ secrets.VITE_MEASUREMENT_ID }}
 
-      - name: 'Deploy to Firebase'
-        uses: 'FirebaseExtended/action-hosting-deploy@v0'
+      - name: Deploy to Firebase
+        uses: FirebaseExtended/action-hosting-deploy@v0
         with:
-          projectId: ${{ secrets.GCP_PROJECT_ID }}
+          repoToken: ${{ secrets.GITHUB_TOKEN }}
+          firebaseServiceAccount: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_YOYO_PROJECTS_MANAGEMENT }}
+          channelId: live
+          projectId: yoyo-projects-management
