@@ -1,4 +1,5 @@
 
+
 // Yoyo Project Management - Single File Application
 // This file contains the entire refactored React application, including all components, pages, types, and logic.
 
@@ -8,7 +9,7 @@ import { BrowserRouter, Routes, Route, Navigate, NavLink, Link } from 'react-rou
 import { initializeApp, getApps, getApp } from 'firebase/app';
 import { getAuth, onAuthStateChanged, signInWithEmailAndPassword, signOut, User } from 'firebase/auth';
 import { 
-    getFirestore, collection, onSnapshot, doc, addDoc, updateDoc, deleteDoc, query, where, writeBatch, serverTimestamp, getDocs, orderBy
+    getFirestore, collection, onSnapshot, doc, addDoc, updateDoc, deleteDoc, query, where, writeBatch, serverTimestamp, getDocs, orderBy, arrayUnion, arrayRemove
 } from 'firebase/firestore';
 import { getStorage, ref, uploadBytes, getDownloadURL, deleteObject } from 'firebase/storage';
 import { 
@@ -148,7 +149,7 @@ export interface Risk {
     id:string; description:string; likelihood:'Low'|'Medium'|'High'; impact:'Low'|'Medium'|'High'; mitigation:string;
 }
 export interface Project {
-  id:string; ownerId:string; name:string; description:string; startDate:string; endDate:string; status?: string; // Added status for achievements
+  id:string; ownerId:string; name:string; description:string; startDate:string; endDate:string; status?: string; members: string[];
 }
 export interface Design {
   id:string; name:string; imageUrl:string; storagePath:string; uploadedAt:any; // Firestore Timestamp
@@ -334,7 +335,7 @@ const btnPrimaryStyle = "px-4 py-2 text-sm font-medium text-white rounded-lg bg-
 const btnSecondaryStyle = "px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600";
 const labelStyle = "block text-sm font-medium text-gray-700 dark:text-gray-300";
 
-const NewProjectModal: React.FC<{ isOpen: boolean; onClose: () => void; onSave: (project: Omit<Project, 'id' | 'ownerId'> | (Omit<Project, 'id' | 'ownerId'> & {id: string})) => void; editingProject: Project | null; t: (key: string) => string; }> = ({ isOpen, onClose, onSave, editingProject, t }) => {
+const NewProjectModal: React.FC<{ isOpen: boolean; onClose: () => void; onSave: (project: Omit<Project, 'id' | 'ownerId' | 'members'> | (Omit<Project, 'id' | 'ownerId' | 'members'> & {id: string})) => void; editingProject: Project | null; t: (key: string) => string; }> = ({ isOpen, onClose, onSave, editingProject, t }) => {
     const [name, setName] = useState(''); const [description, setDescription] = useState(''); const [startDate, setStartDate] = useState(''); const [endDate, setEndDate] = useState('');
     useEffect(() => {
       if (editingProject) { setName(editingProject.name); setDescription(editingProject.description); setStartDate(new Date(editingProject.startDate).toISOString().split('T')[0]); setEndDate(new Date(editingProject.endDate).toISOString().split('T')[0]); }
@@ -438,8 +439,32 @@ const DashboardLayout: React.FC<{ children: React.ReactNode; user: User; project
 };
 
 // 10. PAGE COMPONENTS
-const DashboardPage: React.FC<{ project: Project | null; tasks: Task[]; team: TeamMember[]; budget: BudgetItem[]; risks: Risk[]; t: (key: string) => string; locale: Locale; }> = ({ project, tasks, team, budget, risks, t, locale }) => {
+const DashboardPage: React.FC<{ project: Project | null; tasks: Task[]; team: TeamMember[]; budget: BudgetItem[]; risks: Risk[]; t: (key: string) => string; locale: Locale; theme: 'light' | 'dark' }> = ({ project, tasks, team, budget, risks, t, locale, theme }) => {
     if (!project) return <main className="flex-1 p-6 overflow-y-auto"><EmptyState title={t('noProjectSelected')} message={t('noProjectMessage')} /></main>;
+    
+    const isDarkMode = theme === 'dark';
+    const textColor = isDarkMode ? '#E5E7EB' : '#374151'; // gray-200 and gray-700
+    const gridColor = isDarkMode ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.1)';
+
+    const barChartOptions = {
+        responsive: true,
+        plugins: {
+            legend: { labels: { color: textColor } },
+            title: { display: false }
+        },
+        scales: {
+            x: { ticks: { color: textColor }, grid: { color: gridColor } },
+            y: { ticks: { color: textColor }, grid: { color: gridColor } }
+        }
+    };
+
+    const pieChartOptions = {
+        responsive: true,
+        plugins: {
+            legend: { labels: { color: textColor } }
+        }
+    };
+
     const tasksByStatus = tasks.reduce((acc, task) => { acc[task.status] = (acc[task.status] || 0) + 1; return acc; }, {} as Record<string, number>);
     const budgetOverview = { allocated: budget.reduce((sum, item) => sum + item.allocated, 0), spent: budget.reduce((sum, item) => sum + item.spent, 0) };
     const totalProgress = tasks.reduce((sum, task) => sum + (task.progress || 0), 0);
@@ -459,8 +484,8 @@ const DashboardPage: React.FC<{ project: Project | null; tasks: Task[]; team: Te
           <p className="mt-1 text-sm text-gray-600 dark:text-gray-400">{project.description}</p>
           <div className="grid grid-cols-1 gap-6 mt-6 sm:grid-cols-2 lg:grid-cols-4"> {cardData.map(card => <Card key={card.title} {...card} />)} </div>
           <div className="grid grid-cols-1 gap-6 mt-8 lg:grid-cols-2">
-            <div className="p-4 bg-white rounded-xl shadow-md dark:bg-dark-secondary"><h2 className="text-lg font-semibold text-gray-900 dark:text-white">{t('taskStatus')}</h2><Bar data={taskStatusData} /></div>
-            <div className="p-4 bg-white rounded-xl shadow-md dark:bg-dark-secondary"><h2 className="text-lg font-semibold text-gray-900 dark:text-white">{t('budgetOverview')}</h2><Pie data={budgetData} /></div>
+            <div className="p-4 bg-white rounded-xl shadow-md dark:bg-dark-secondary"><h2 className="text-lg font-semibold text-gray-900 dark:text-white">{t('taskStatus')}</h2><Bar data={taskStatusData} options={barChartOptions} /></div>
+            <div className="p-4 bg-white rounded-xl shadow-md dark:bg-dark-secondary"><h2 className="text-lg font-semibold text-gray-900 dark:text-white">{t('budgetOverview')}</h2><Pie data={budgetData} options={pieChartOptions} /></div>
           </div>
         </main>
     );
@@ -847,11 +872,11 @@ const ProfilePage: React.FC<{ user: User; t: (key: string) => string; }> = ({ us
 
     useEffect(() => {
         const fetchUserData = async () => {
-            if (!user) return;
+            if (!user || !user.email) return;
             setLoading(true);
             
-            // Fetch all user-owned projects
-            const projectsQuery = query(collection(db, "artifacts", appId, "public", "data", "projects"), where("ownerId", "==", user.uid));
+            // Fetch all projects the user is a member of
+            const projectsQuery = query(collection(db, "artifacts", appId, "public", "data", "projects"), where("members", "array-contains", user.email));
             const projectsSnapshot = await getDocs(projectsQuery);
             const projectsData = projectsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })) as Project[];
             setMyProjects(projectsData);
@@ -932,14 +957,13 @@ const App: React.FC = () => {
     
     useEffect(() => { onAuthStateChanged(auth, (user) => { setUser(user); setLoadingAuth(false); }); document.documentElement.classList.toggle('dark', theme === 'dark'); document.documentElement.lang = locale; document.documentElement.dir = locale === 'ar' ? 'rtl' : 'ltr'; }, [theme, locale]);
     
-    // BUG FIX: Refactored project fetching to be more robust and avoid race conditions.
     useEffect(() => {
-      if (!user) {
+      if (!user || !user.email) {
         setProjects([]);
         setSelectedProjectId(null);
         return;
       }
-      const q = query(collection(db, "artifacts", appId, "public", "data", "projects"), where("ownerId", "==", user.uid));
+      const q = query(collection(db, "artifacts", appId, "public", "data", "projects"), where("members", "array-contains", user.email));
       const unsubscribe = onSnapshot(q, (snapshot) => {
         const projectsData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })) as Project[];
         setProjects(projectsData);
@@ -996,9 +1020,20 @@ const App: React.FC = () => {
             }
         }
         
-        // FIX: Firestore does not accept `undefined` values. When no parent task is
-        // selected, parentId can be `undefined` or an empty string from the form.
-        // We convert this to `null` before saving to prevent a Firestore error.
+        if (type === 'team') {
+            const projectDocRef = doc(db, "artifacts", appId, "public", "data", "projects", selectedProjectId);
+            if (id) { // Editing member
+                const oldEmail = editingMember?.email;
+                const newEmail = payload.email;
+                if (oldEmail && newEmail && oldEmail !== newEmail) {
+                    await updateDoc(projectDocRef, { members: arrayRemove(oldEmail) });
+                    await updateDoc(projectDocRef, { members: arrayUnion(newEmail) });
+                }
+            } else { // Adding new member
+                await updateDoc(projectDocRef, { members: arrayUnion(payload.email) });
+            }
+        }
+        
         if (type === 'tasks' && (payload.parentId === undefined || payload.parentId === '')) {
             payload.parentId = null;
         }
@@ -1008,7 +1043,6 @@ const App: React.FC = () => {
             if (id) { 
                 await updateDoc(doc(db, ...collectionPath, id), payload); 
                 logActivity(`Updated ${type.slice(0,-1)}: "${payload.name || payload.category || payload.description}"`); 
-                // If a parent task is marked as done, update its subtasks
                 if (type === 'tasks' && payload.status === 'Done') {
                     const batch = writeBatch(db);
                     const subtasksQuery = query(collection(db, ...collectionPath), where("parentId", "==", id));
@@ -1026,11 +1060,11 @@ const App: React.FC = () => {
         } catch (error) { console.error("Error saving item:", error); }
     };
     
-    const handleSaveProject = async (projectData: any) => { if (!user) return; const { id, ...payload } = projectData; const projectsPath = ["artifacts", appId, "public", "data", "projects"]; if (id) { await updateDoc(doc(db, ...projectsPath, id), payload); logActivity(`Updated project: "${payload.name}"`); } else { const newDocRef = await addDoc(collection(db, ...projectsPath), { ...payload, ownerId: user.uid, status: 'Ongoing' }); setSelectedProjectId(newDocRef.id); } };
+    const handleSaveProject = async (projectData: any) => { if (!user || !user.email) return; const { id, ...payload } = projectData; const projectsPath = ["artifacts", appId, "public", "data", "projects"]; if (id) { await updateDoc(doc(db, ...projectsPath, id), payload); logActivity(`Updated project: "${payload.name}"`); } else { const newDocRef = await addDoc(collection(db, ...projectsPath), { ...payload, ownerId: user.uid, status: 'Ongoing', members: [user.email] }); setSelectedProjectId(newDocRef.id); } };
     const handleEditProject = (project: Project) => { setEditingProject(project); setIsNewProjectModalOpen(true); };
     const handleDelete = (type: string, id: string | Design, name?: string) => { setItemToDelete({ type, id, name }); setIsConfirmModalOpen(true); };
     
-    const confirmDelete = async () => { /* ... existing delete logic ... */ if (!itemToDelete || !user) return; const { type, id, name } = itemToDelete; if (type === 'project' && typeof id === 'string') { const subCollections = ['tasks', 'team', 'budget', 'risks', 'designs', 'activity_logs']; const batch = writeBatch(db); for (const subCollection of subCollections) { const subCollectionRef = collection(db, "artifacts", appId, "public", "data", "projects", id, subCollection); const snapshot = await getDocs(subCollectionRef); snapshot.docs.forEach(doc => batch.delete(doc.ref)); } batch.delete(doc(db, "artifacts", appId, "public", "data", "projects", id)); await batch.commit(); } else if (selectedProjectId && typeof id === 'string') { const collectionPath = ["artifacts", appId, "public", "data", "projects", selectedProjectId, type]; await deleteDoc(doc(db, ...collectionPath, id)); logActivity(`Deleted ${type.slice(0,-1)}: "${name || id}"`); } else if (type === 'designs' && typeof id === 'object' && selectedProjectId) { const design = id as Design; await deleteObject(ref(storage, design.storagePath)); await deleteDoc(doc(db, "artifacts", appId, "public", "data", "projects", selectedProjectId, "designs", design.id)); logActivity(`Deleted design: "${design.name}"`); } setItemToDelete(null); setIsConfirmModalOpen(false);};
+    const confirmDelete = async () => { if (!itemToDelete || !user) return; const { type, id, name } = itemToDelete; if (type === 'project' && typeof id === 'string') { const subCollections = ['tasks', 'team', 'budget', 'risks', 'designs', 'activity_logs']; const batch = writeBatch(db); for (const subCollection of subCollections) { const subCollectionRef = collection(db, "artifacts", appId, "public", "data", "projects", id, subCollection); const snapshot = await getDocs(subCollectionRef); snapshot.docs.forEach(doc => batch.delete(doc.ref)); } batch.delete(doc(db, "artifacts", appId, "public", "data", "projects", id)); await batch.commit(); } else if (selectedProjectId && typeof id === 'string') { if (type === 'team') { const memberToDelete = team.find(m => m.id === id); if (memberToDelete?.email) { const projectDocRef = doc(db, "artifacts", appId, "public", "data", "projects", selectedProjectId); await updateDoc(projectDocRef, { members: arrayRemove(memberToDelete.email) }); } } const collectionPath = ["artifacts", appId, "public", "data", "projects", selectedProjectId, type]; await deleteDoc(doc(db, ...collectionPath, id)); logActivity(`Deleted ${type.slice(0,-1)}: "${name || id}"`); } else if (type === 'designs' && typeof id === 'object' && selectedProjectId) { const design = id as Design; await deleteObject(ref(storage, design.storagePath)); await deleteDoc(doc(db, "artifacts", appId, "public", "data", "projects", selectedProjectId, "designs", design.id)); logActivity(`Deleted design: "${design.name}"`); } setItemToDelete(null); setIsConfirmModalOpen(false);};
     const handleUploadDesign = async (file: File) => { if (!user || !selectedProjectId) return; const storagePath = `designs/${selectedProjectId}/${Date.now()}_${file.name}`; const storageRef = ref(storage, storagePath); await uploadBytes(storageRef, file); const downloadURL = await getDownloadURL(storageRef); await addDoc(collection(db, "artifacts", appId, "public", "data", "projects", selectedProjectId, "designs"), { name: file.name, imageUrl: downloadURL, storagePath: storagePath, uploadedAt: serverTimestamp() }); logActivity(`Uploaded new design: "${file.name}"`); };
     const handleSaveDesignName = async (design: Pick<Design, 'id'|'name'>) => { if (selectedProjectId) { await updateDoc(doc(db, "artifacts", appId, "public", "data", "projects", selectedProjectId, "designs", design.id), { name: design.name }); logActivity(`Renamed design to: "${design.name}"`); } };
 
@@ -1043,7 +1077,7 @@ const App: React.FC = () => {
         <BrowserRouter>
           <DashboardLayout user={user} projects={projects} selectedProjectId={selectedProjectId} onSelectProject={setSelectedProjectId} onNewProject={() => { setEditingProject(null); setIsNewProjectModalOpen(true); }} onEditProject={handleEditProject} onDeleteProject={(id) => handleDelete('project', id, projects.find(p=>p.id===id)?.name)} onSignOut={handleSignOut} theme={theme} toggleTheme={toggleTheme} locale={locale} toggleLocale={toggleLocale} t={t}>
             <Routes>
-              <Route path="/" element={<DashboardPage project={selectedProject} tasks={tasks} team={team} budget={budget} risks={risks} t={t} locale={locale} />} />
+              <Route path="/" element={<DashboardPage project={selectedProject} tasks={tasks} team={team} budget={budget} risks={risks} t={t} locale={locale} theme={theme} />} />
               <Route path="/tasks" element={<TasksPage project={selectedProject} tasks={tasks} team={team} onNew={() => { setEditingTask(null); setIsTaskModalOpen(true); }} onEdit={(task) => { setEditingTask(task); setIsTaskModalOpen(true); }} onDelete={(id) => handleDelete('tasks', id, tasks.find(item=>item.id===id)?.name)} t={t} locale={locale} />} />
               <Route path="/team" element={<TeamPage project={selectedProject} team={team} onNew={() => { setEditingMember(null); setIsTeamMemberModalOpen(true); }} onEdit={(member) => { setEditingMember(member); setIsTeamMemberModalOpen(true); }} onDelete={(id) => handleDelete('team', id, team.find(item=>item.id===id)?.name)} t={t} />} />
               <Route path="/budget" element={<BudgetPage project={selectedProject} budget={budget} onNew={() => { setEditingBudgetItem(null); setIsBudgetItemModalOpen(true); }} onEdit={(item) => { setEditingBudgetItem(item); setIsBudgetItemModalOpen(true); }} onDelete={(id) => handleDelete('budget', id, budget.find(item=>item.id===id)?.category)} t={t} locale={locale} />} />
