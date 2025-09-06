@@ -1,21 +1,17 @@
 
 
-
-
-
 // Yoyo Project Management - Single File Application
 // This file contains the entire refactored React application, including all components, pages, types, and logic.
 
 // 1. IMPORTS
 import React, { useState, useEffect, useRef, ReactNode, createContext, useContext, useMemo } from 'react';
 import { BrowserRouter, Routes, Route, Navigate, NavLink, Link } from 'react-router-dom';
-// Fix: Use namespace import for 'firebase/app' to resolve module export errors.
-import * as firebaseApp from 'firebase/app';
+// Fix: Use named imports for 'firebase/app' to resolve module export errors.
+import { initializeApp, getApps, getApp } from 'firebase/app';
 import { getAuth, onAuthStateChanged, signInWithEmailAndPassword, signOut, User } from 'firebase/auth';
 import { 
     getFirestore, collection, onSnapshot, doc, addDoc, updateDoc, deleteDoc, query, where, writeBatch, serverTimestamp, getDocs, orderBy, arrayUnion, arrayRemove
 } from 'firebase/firestore';
-import { getStorage, ref, uploadBytes, getDownloadURL, deleteObject } from 'firebase/storage';
 import { 
     LayoutDashboard, Users, CheckSquare, Calendar, DollarSign, AlertTriangle, FileText, Image, Plus, Settings, X, 
     Search, Bell, LogOut, Menu, Sun, Moon, UploadCloud, Trash2, Edit, Save, PackagePlus, User as UserIcon, AlertCircle, CheckCircle, Info, Link2, ChevronDown
@@ -27,7 +23,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 // 2. CHART.JS REGISTRATION
 ChartJS.register(CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend, ArcElement, PointElement, LineElement);
 
-// 3. FIREBASE INITIALIZATION
+// 3. FIREBASE & GOOGLE DRIVE CONFIG
 const firebaseConfig = {
   apiKey: "AIzaSyCr6zvT7MqzlLGylTUvWlWfJudgi_nFCos",
   authDomain: "yoyo-projects-management.firebaseapp.com",
@@ -38,11 +34,14 @@ const firebaseConfig = {
   measurementId: "G-9YHY63624V"
 };
 
-// Fix: Call Firebase functions from the imported namespace.
-const app = !firebaseApp.getApps().length ? firebaseApp.initializeApp(firebaseConfig) : firebaseApp.getApp();
+// Google Drive Configuration
+const GOOGLE_CLIENT_ID = "314270688402-k6b4qg9u6b356h9ur6j5kqj4i4h3h8t7.apps.googleusercontent.com";
+const DRIVE_FOLDER_ID = "1gM3QYkQZ5xY5Z5Y5Z5Y5Z5Y5Z5Y5Z5Y5"; // Placeholder for the shared Google Drive folder ID
+
+// Fix: Call Firebase functions directly after named import.
+const app = !getApps().length ? initializeApp(firebaseConfig) : getApp();
 const auth = getAuth(app);
 const db = getFirestore(app);
-const storage = getStorage(app);
 const appId = firebaseConfig.projectId; // Use projectId as the identifier for the collection path
 
 // 4. INTERNATIONALIZATION (i18n)
@@ -76,7 +75,7 @@ const translations = {
     "teamTitle": "Team for {projectName}", "noTeam": "No Team Members", "noTeamMessage": "Add team members to your project.",
     "budgetTitle": "Budget for {projectName}", "noBudget": "No Budget Items", "noBudgetMessage": "Add budget items to track project expenses.", "allocated": "Allocated", "spent": "Spent", "remaining": "Remaining", "total": "Total",
     "risksTitle": "Risks for {projectName}", "noRisks": "No Risks Identified", "noRisksMessage": "Add potential risks to your project.",
-    "designsTitle": "Designs for {projectName}", "designsMessage": "Upload and manage design assets for your project.", "uploadDesign": "Upload New Design", "pngFile": "PNG File", "upload": "Upload", "uploading": "Uploading...", "pngOnlyError": "Only PNG files are allowed.", "uploadError": "File upload failed. Please try again.", "uploadSuccess": "Upload successful!", "noDesigns": "No Designs Yet", "noDesignsMessage": "Upload your first design using the form above.", "uploaded": "Uploaded",
+    "designsTitle": "Designs for {projectName}", "designsMessage": "Upload and manage design assets for your project.", "uploadDesign": "Upload New Design", "pngFile": "PNG File", "upload": "Upload", "uploading": "Uploading...", "pngOnlyError": "Only PNG files are allowed.", "uploadError": "File upload failed. Please try again.", "uploadSuccess": "Upload successful!", "noDesigns": "No Designs Yet", "noDesignsMessage": "Upload your first design using the form above.", "uploaded": "Uploaded", "connectToGoogleDrive": "Connect to Google Drive", "googleDriveConnectMessage": "Please connect to Google Drive to manage design files.",
     "profileTitle": "User Profile", "myTasks": "My Assigned Tasks", "myProjects": "My Projects", "achievements": "Achievements", "noAssignedTasks": "You have no tasks assigned to you.", "achievementCompletedProjects": "Completed {count} projects.",
     "settingsTitle": "Settings & Activity Log", "activityLog": "Activity Log", "noActivity": "No activity recorded yet.",
     "reportsTitle": "Reports for {projectName}", "projectSummary": "Project Summary", "exportToCsv": "Export to CSV", "exportToPdf": "Export to PDF",
@@ -114,7 +113,7 @@ const translations = {
     "teamTitle": "فريق مشروع {projectName}", "noTeam": "لا يوجد أعضاء في الفريق", "noTeamMessage": "أضف أعضاء الفريق إلى مشروعك.",
     "budgetTitle": "ميزانية مشروع {projectName}", "noBudget": "لا توجد بنود في الميزانية", "noBudgetMessage": "أضف بنود الميزانية لتتبع نفقات المشروع.", "allocated": "المخصص", "spent": "المصروف", "remaining": "المتبقي", "total": "الإجمالي",
     "risksTitle": "مخاطر مشروع {projectName}", "noRisks": "لم يتم تحديد مخاطر", "noRisksMessage": "أضف المخاطر المحتملة لمشروعك.",
-    "designsTitle": "تصاميم مشروع {projectName}", "designsMessage": "قم بتحميل وإدارة أصول التصميم لمشروعك.", "uploadDesign": "تحميل تصميم جديد", "pngFile": "ملف PNG", "upload": "تحميل", "uploading": "جاري التحميل...", "pngOnlyError": "يُسمح بملفات PNG فقط.", "uploadError": "فشل تحميل الملف. يرجى المحاولة مرة أخرى.", "uploadSuccess": "تم التحميل بنجاح!", "noDesigns": "لا توجد تصاميم بعد", "noDesignsMessage": "قم بتحميل تصميمك الأول باستخدام النموذج أعلاه.", "uploaded": "تم الرفع",
+    "designsTitle": "تصاميم مشروع {projectName}", "designsMessage": "قم بتحميل وإدارة أصول التصميم لمشروعك.", "uploadDesign": "تحميل تصميم جديد", "pngFile": "ملف PNG", "upload": "تحميل", "uploading": "جاري التحميل...", "pngOnlyError": "يُسمح بملفات PNG فقط.", "uploadError": "فشل تحميل الملف. يرجى المحاولة مرة أخرى.", "uploadSuccess": "تم التحميل بنجاح!", "noDesigns": "لا توجد تصاميم بعد", "noDesignsMessage": "قم بتحميل تصميمك الأول باستخدام النموذج أعلاه.", "uploaded": "تم الرفع", "connectToGoogleDrive": "الاتصال بـ Google Drive", "googleDriveConnectMessage": "يرجى الاتصال بـ Google Drive لإدارة ملفات التصميم.",
     "profileTitle": "الملف الشخصي للمستخدم", "myTasks": "المهام المسندة إلي", "myProjects": "مشاريعي", "achievements": "الإنجازات", "noAssignedTasks": "ليس لديك مهام مسندة إليك.", "achievementCompletedProjects": "أكملت {count} مشاريع.",
     "settingsTitle": "الإعدادات وسجل النشاط", "activityLog": "سجل النشاط", "noActivity": "لم يتم تسجيل أي نشاط بعد.",
     "reportsTitle": "تقارير مشروع {projectName}", "projectSummary": "ملخص المشروع", "exportToCsv": "تصدير إلى CSV", "exportToPdf": "تصدير إلى PDF",
@@ -159,7 +158,12 @@ export interface Project {
   id:string; ownerId:string; name:string; description:string; startDate:string; endDate:string; status?: string; members: string[];
 }
 export interface Design {
-  id:string; name:string; imageUrl:string; storagePath:string; uploadedAt:any; // Firestore Timestamp
+  id:string; // Firestore doc ID
+  name:string;
+  fileId: string; // Google Drive file ID
+  webContentLink: string; // Link to download content
+  webViewLink: string; // Link to view in Drive UI
+  uploadedAt:any; // Firestore Timestamp
 }
 export interface ActivityLog {
   id:string; userEmail:string; action:string; timestamp:any; // Firestore Timestamp
@@ -658,7 +662,49 @@ const RisksPage: React.FC<{ project: Project | null; risks: Risk[]; onNew: () =>
     );
 };
 
-const DesignsPage: React.FC<{ project: Project | null; designs: Design[]; onEdit: (design: Design) => void; onDelete: (design: Design) => void; onUpload: (file: File) => void; t: (key: string) => string; locale: Locale; }> = ({ project, designs, onEdit, onDelete, onUpload, t, locale }) => {
+const DriveImage: React.FC<{ webContentLink: string; token: string; alt: string; }> = ({ webContentLink, token, alt }) => {
+    const [imageUrl, setImageUrl] = useState<string | null>(null);
+    const [loading, setLoading] = useState(true);
+
+    useEffect(() => {
+        let isMounted = true;
+        const fetchImage = async () => {
+            if (!webContentLink || !token) return;
+            setLoading(true);
+            try {
+                const response = await fetch(webContentLink, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                if (!response.ok) throw new Error('Failed to fetch image');
+                const blob = await response.blob();
+                if (isMounted) {
+                    setImageUrl(URL.createObjectURL(blob));
+                }
+            } catch (error) {
+                console.error("Error fetching Drive image:", error);
+                if (isMounted) setImageUrl(null);
+            } finally {
+                if (isMounted) setLoading(false);
+            }
+        };
+
+        fetchImage();
+
+        return () => {
+            isMounted = false;
+            if (imageUrl) {
+                URL.revokeObjectURL(imageUrl);
+            }
+        };
+    }, [webContentLink, token]);
+
+    if (loading) return <div className="flex items-center justify-center w-full h-48 bg-gray-200 dark:bg-gray-700"><BouncingLoader /></div>;
+    if (!imageUrl) return <div className="flex items-center justify-center w-full h-48 bg-gray-200 dark:bg-gray-700"><Image size={48} className="text-gray-400"/></div>;
+
+    return <img src={imageUrl} alt={alt} className="object-cover w-full h-48" />;
+};
+
+const DesignsPage: React.FC<{ project: Project | null; designs: Design[]; onEdit: (design: Design) => void; onDelete: (design: Design) => void; onUpload: (file: File) => void; t: (key: string) => string; locale: Locale; token: string | null; login: () => void; }> = ({ project, designs, onEdit, onDelete, onUpload, t, locale, token, login }) => {
     const [file, setFile] = useState<File | null>(null);
     const [uploading, setUploading] = useState(false);
     const { addToast } = useToast();
@@ -688,6 +734,18 @@ const DesignsPage: React.FC<{ project: Project | null; designs: Design[]; onEdit
     };
     
     if (!project) return <main className="flex-1 p-6 overflow-y-auto"><EmptyState title={t('noProjectSelected')} message={t('noProjectMessage')} /></main>;
+    
+    if (!token) {
+        return (
+            <main className="flex-1 p-6 overflow-y-auto flex items-center justify-center">
+                <div className="text-center">
+                    <p className="mb-4 text-gray-700 dark:text-gray-300">{t('googleDriveConnectMessage')}</p>
+                    <button onClick={() => login()} className={btnPrimaryStyle}>{t('connectToGoogleDrive')}</button>
+                </div>
+            </main>
+        );
+    }
+    
     return (
         <main className="flex-1 p-6 overflow-y-auto">
             <h1 className="text-2xl font-bold text-gray-900 dark:text-white">{t('designsTitle').replace('{projectName}', project.name)}</h1>
@@ -711,10 +769,10 @@ const DesignsPage: React.FC<{ project: Project | null; designs: Design[]; onEdit
                     <AnimatePresence>
                     {designs.map((design, i) => (
                         <motion.div initial={{ opacity: 0, scale: 0.8 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.8 }} transition={{ delay: i * 0.05 }} key={design.id} className="relative overflow-hidden bg-white rounded-lg shadow group dark:bg-dark-secondary">
-                            <img src={design.imageUrl} alt={design.name} className="object-cover w-full h-48" />
+                            <DriveImage webContentLink={design.webContentLink} token={token} alt={design.name} />
                             <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-50 transition-all"></div>
                             <div className="absolute bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-black/70 to-transparent">
-                                <p className="font-semibold text-white truncate">{design.name}</p>
+                                <a href={design.webViewLink} target="_blank" rel="noopener noreferrer" className="font-semibold text-white truncate hover:underline">{design.name}</a>
                                 <p className="text-xs text-gray-300">{t('uploaded')}: {formatDateTime(design.uploadedAt, locale)}</p>
                             </div>
                             <div className="absolute top-2 right-2 flex space-x-2 opacity-0 group-hover:opacity-100 transition-opacity">
@@ -999,13 +1057,21 @@ const ProfilePage: React.FC<{ user: User; t: (key: string) => string; }> = ({ us
 };
 
 // 11. MAIN APP COMPONENT
-const App: React.FC = () => {
+const AppContent: React.FC = () => {
+    const { useGoogleLogin } = (window as any).ReactOAuth;
+
     const [user, setUser] = useState<User | null>(null); const [loadingAuth, setLoadingAuth] = useState(true); const [projects, setProjects] = useState<Project[]>([]); const [selectedProjectId, setSelectedProjectId] = useState<string | null>(null); const [theme, setTheme] = useState<'light' | 'dark'>('light'); const [locale, setLocale] = useState<Locale>('en');
     const [tasks, setTasks] = useState<Task[]>([]); const [team, setTeam] = useState<TeamMember[]>([]); const [budget, setBudget] = useState<BudgetItem[]>([]); const [risks, setRisks] = useState<Risk[]>([]); const [designs, setDesigns] = useState<Design[]>([]); const [activityLogs, setActivityLogs] = useState<ActivityLog[]>([]);
     const [isNewProjectModalOpen, setIsNewProjectModalOpen] = useState(false); const [isTaskModalOpen, setIsTaskModalOpen] = useState(false); const [isTeamMemberModalOpen, setIsTeamMemberModalOpen] = useState(false); const [isBudgetItemModalOpen, setIsBudgetItemModalOpen] = useState(false); const [isRiskModalOpen, setIsRiskModalOpen] = useState(false); const [isDesignModalOpen, setIsDesignModalOpen] = useState(false); const [isConfirmModalOpen, setIsConfirmModalOpen] = useState(false);
     const [editingProject, setEditingProject] = useState<Project | null>(null); const [editingTask, setEditingTask] = useState<Task | null>(null); const [editingMember, setEditingMember] = useState<TeamMember | null>(null); const [editingBudgetItem, setEditingBudgetItem] = useState<BudgetItem | null>(null); const [editingRisk, setEditingRisk] = useState<Risk | null>(null); const [editingDesign, setEditingDesign] = useState<Design | null>(null);
     const [itemToDelete, setItemToDelete] = useState<{ type: string; id: string | Design; name?: string; } | null>(null);
     const [notifiedReminders, setNotifiedReminders] = useState<Set<string>>(new Set());
+    const [googleToken, setGoogleToken] = useState<string | null>(null);
+
+    const handleGoogleLogin = useGoogleLogin({
+        onSuccess: tokenResponse => setGoogleToken(tokenResponse.access_token),
+        scope: 'https://www.googleapis.com/auth/drive.file',
+    });
 
     const { addToast } = useToast();
     const t = (key: string) => (translations[locale] as any)[key] || key;
@@ -1121,8 +1187,35 @@ const App: React.FC = () => {
     const handleEditProject = (project: Project) => { setEditingProject(project); setIsNewProjectModalOpen(true); };
     const handleDelete = (type: string, id: string | Design, name?: string) => { setItemToDelete({ type, id, name }); setIsConfirmModalOpen(true); };
     
-    const confirmDelete = async () => { if (!itemToDelete || !user) return; const { type, id, name } = itemToDelete; if (type === 'project' && typeof id === 'string') { const subCollections = ['tasks', 'team', 'budget', 'risks', 'designs', 'activity_logs']; const batch = writeBatch(db); for (const subCollection of subCollections) { const subCollectionRef = collection(db, "artifacts", appId, "public", "data", "projects", id, subCollection); const snapshot = await getDocs(subCollectionRef); snapshot.docs.forEach(doc => batch.delete(doc.ref)); } batch.delete(doc(db, "artifacts", appId, "public", "data", "projects", id)); await batch.commit(); } else if (selectedProjectId && typeof id === 'string') { if (type === 'team') { const memberToDelete = team.find(m => m.id === id); if (memberToDelete?.email) { const projectDocRef = doc(db, "artifacts", appId, "public", "data", "projects", selectedProjectId); await updateDoc(projectDocRef, { members: arrayRemove(memberToDelete.email) }); } } const collectionPath = ["artifacts", appId, "public", "data", "projects", selectedProjectId, type]; await deleteDoc(doc(db, ...collectionPath, id)); logActivity(`Deleted ${type.slice(0,-1)}: "${name || id}"`); } else if (type === 'designs' && typeof id === 'object' && selectedProjectId) { const design = id as Design; await deleteObject(ref(storage, design.storagePath)); await deleteDoc(doc(db, "artifacts", appId, "public", "data", "projects", selectedProjectId, "designs", design.id)); logActivity(`Deleted design: "${design.name}"`); } setItemToDelete(null); setIsConfirmModalOpen(false);};
-    const handleUploadDesign = async (file: File) => { if (!user || !selectedProjectId) return; const storagePath = `designs/${selectedProjectId}/${Date.now()}_${file.name}`; const storageRef = ref(storage, storagePath); await uploadBytes(storageRef, file); const downloadURL = await getDownloadURL(storageRef); await addDoc(collection(db, "artifacts", appId, "public", "data", "projects", selectedProjectId, "designs"), { name: file.name, imageUrl: downloadURL, storagePath: storagePath, uploadedAt: serverTimestamp() }); logActivity(`Uploaded new design: "${file.name}"`); };
+    const confirmDelete = async () => { if (!itemToDelete || !user) return; const { type, id, name } = itemToDelete; if (type === 'project' && typeof id === 'string') { const subCollections = ['tasks', 'team', 'budget', 'risks', 'designs', 'activity_logs']; const batch = writeBatch(db); for (const subCollection of subCollections) { const subCollectionRef = collection(db, "artifacts", appId, "public", "data", "projects", id, subCollection); const snapshot = await getDocs(subCollectionRef); snapshot.docs.forEach(doc => batch.delete(doc.ref)); } batch.delete(doc(db, "artifacts", appId, "public", "data", "projects", id)); await batch.commit(); } else if (selectedProjectId && typeof id === 'string') { if (type === 'team') { const memberToDelete = team.find(m => m.id === id); if (memberToDelete?.email) { const projectDocRef = doc(db, "artifacts", appId, "public", "data", "projects", selectedProjectId); await updateDoc(projectDocRef, { members: arrayRemove(memberToDelete.email) }); } } const collectionPath = ["artifacts", appId, "public", "data", "projects", selectedProjectId, type]; await deleteDoc(doc(db, ...collectionPath, id)); logActivity(`Deleted ${type.slice(0,-1)}: "${name || id}"`); } else if (type === 'designs' && typeof id === 'object' && selectedProjectId && googleToken) { const design = id as Design; try { const response = await fetch(`https://www.googleapis.com/drive/v3/files/${design.fileId}`, { method: 'DELETE', headers: { 'Authorization': `Bearer ${googleToken}` } }); if (!response.ok && response.status !== 404) { throw new Error('Failed to delete from Google Drive'); } await deleteDoc(doc(db, "artifacts", appId, "public", "data", "projects", selectedProjectId, "designs", design.id)); logActivity(`Deleted design: "${design.name}"`); } catch (error) { console.error(error); addToast('Failed to delete design file.', 'error'); } } setItemToDelete(null); setIsConfirmModalOpen(false);};
+    
+    const handleUploadDesign = async (file: File) => {
+        if (!user || !selectedProjectId || !googleToken) throw new Error("Not authenticated");
+    
+        const metadata = { name: file.name, parents: [DRIVE_FOLDER_ID], mimeType: file.type };
+        const formData = new FormData();
+        formData.append('metadata', new Blob([JSON.stringify(metadata)], { type: 'application/json' }));
+        formData.append('file', file);
+    
+        const response = await fetch('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart&fields=id,name,webViewLink,webContentLink', {
+            method: 'POST',
+            headers: { 'Authorization': `Bearer ${googleToken}` },
+            body: formData,
+        });
+    
+        if (!response.ok) throw new Error('Upload to Google Drive failed');
+        const newFile = await response.json();
+    
+        await addDoc(collection(db, "artifacts", appId, "public", "data", "projects", selectedProjectId, "designs"), {
+            name: newFile.name,
+            fileId: newFile.id,
+            webViewLink: newFile.webViewLink,
+            webContentLink: newFile.webContentLink,
+            uploadedAt: serverTimestamp()
+        });
+        logActivity(`Uploaded new design: "${file.name}"`);
+    };
+    
     const handleSaveDesignName = async (design: Pick<Design, 'id'|'name'>) => { if (selectedProjectId) { await updateDoc(doc(db, "artifacts", appId, "public", "data", "projects", selectedProjectId, "designs", design.id), { name: design.name }); logActivity(`Renamed design to: "${design.name}"`); } };
 
     const selectedProject = projects.find(p => p.id === selectedProjectId) || null;
@@ -1140,7 +1233,7 @@ const App: React.FC = () => {
               <Route path="/team" element={<TeamPage project={selectedProject} team={team} onNew={() => { setEditingMember(null); setIsTeamMemberModalOpen(true); }} onEdit={(member) => { setEditingMember(member); setIsTeamMemberModalOpen(true); }} onDelete={(id) => handleDelete('team', id, team.find(item=>item.id===id)?.name)} t={t} />} />
               <Route path="/budget" element={<BudgetPage project={selectedProject} budget={budget} onNew={() => { setEditingBudgetItem(null); setIsBudgetItemModalOpen(true); }} onEdit={(item) => { setEditingBudgetItem(item); setIsBudgetItemModalOpen(true); }} onDelete={(id) => handleDelete('budget', id, budget.find(item=>item.id===id)?.category)} t={t} locale={locale} />} />
               <Route path="/risks" element={<RisksPage project={selectedProject} risks={risks} onNew={() => { setEditingRisk(null); setIsRiskModalOpen(true); }} onEdit={(risk) => { setEditingRisk(risk); setIsRiskModalOpen(true); }} onDelete={(id) => handleDelete('risks', id, risks.find(item=>item.id===id)?.description)} t={t} />} />
-              <Route path="/designs" element={<DesignsPage project={selectedProject} designs={designs} onEdit={(design) => { setEditingDesign(design); setIsDesignModalOpen(true); }} onDelete={(design) => handleDelete('designs', design, design.name)} onUpload={handleUploadDesign} t={t} locale={locale} />} />
+              <Route path="/designs" element={<DesignsPage project={selectedProject} designs={designs} onEdit={(design) => { setEditingDesign(design); setIsDesignModalOpen(true); }} onDelete={(design) => handleDelete('designs', design, design.name)} onUpload={handleUploadDesign} t={t} locale={locale} token={googleToken} login={handleGoogleLogin} />} />
               <Route path="/reports" element={<ReportsPage project={selectedProject} tasks={tasks} team={team} budget={budget} risks={risks} t={t} locale={locale} />} />
               <Route path="/settings" element={<SettingsPage project={selectedProject} activityLogs={activityLogs} t={t} locale={locale} />} />
               <Route path="/profile" element={<ProfilePage user={user} t={t} />} />
@@ -1158,6 +1251,24 @@ const App: React.FC = () => {
         </BrowserRouter>
     );
 };
+
+const App: React.FC = () => {
+    // This component is a wrapper for the GoogleOAuthProvider.
+    // The main app logic is moved to AppContent to allow the use of the useGoogleLogin hook.
+    const { GoogleOAuthProvider } = (window as any).ReactOAuth || {};
+
+    if (!GoogleOAuthProvider) {
+        // Render a loader or fallback if the script hasn't loaded yet
+        return <div className="flex items-center justify-center h-screen bg-main"><BouncingLoader /></div>;
+    }
+
+    return (
+        <GoogleOAuthProvider clientId={GOOGLE_CLIENT_ID}>
+            <AppContent />
+        </GoogleOAuthProvider>
+    );
+};
+
 
 const AppWrapper: React.FC = () => (
     <ToastProvider>
