@@ -3,7 +3,7 @@
 
 // 1. IMPORTS
 import React, { useState, useEffect, useRef, ReactNode, createContext, useContext, useMemo } from 'react';
-import { BrowserRouter, Routes, Route, Navigate, NavLink, Link, useLocation } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate, NavLink, Link, useLocation, Outlet } from 'react-router-dom';
 import { initializeApp, getApps, getApp } from 'firebase/app';
 import { getAuth, onAuthStateChanged, signInWithEmailAndPassword, signOut, User } from 'firebase/auth';
 import { 
@@ -438,12 +438,13 @@ const DesignsPage: React.FC<{ t: (key: string) => string; locale: Locale }> = ({
     const [isUploading, setIsUploading] = useState(false);
     const fileInputRef = useRef<HTMLInputElement>(null);
 
-    const { useGoogleLogin } = (window as any).ReactOAuthGoogle;
+    // FIX: Moved from module scope to component scope to prevent race condition
+    const { useGoogleLogin } = (window as any).ReactOAuthGoogle || {};
 
-    const login = useGoogleLogin({
+    const login = useGoogleLogin ? useGoogleLogin({
         onSuccess: (tokenResponse) => setToken(tokenResponse),
         scope: 'https://www.googleapis.com/auth/drive.file',
-    });
+    }) : () => { console.error("Google Login not initialized"); login()};
 
     const fetchDesigns = async () => {
         if (!token) return;
@@ -517,6 +518,17 @@ const DesignsPage: React.FC<{ t: (key: string) => string; locale: Locale }> = ({
             addToast('Failed to delete file', 'error');
         }
     };
+    
+    if (!useGoogleLogin) {
+      return (
+            <div className="p-6 md:p-8">
+                <h1 className="text-2xl font-semibold text-gray-900 dark:text-white">{t('designsTitle').replace('{projectName}', currentProject?.name || '')}</h1>
+                <div className="flex items-center justify-center mt-8">
+                    <BouncingLoader />
+                </div>
+            </div>
+        );
+    }
 
     if (!token) {
         return (
@@ -582,8 +594,6 @@ const DesignsPage: React.FC<{ t: (key: string) => string; locale: Locale }> = ({
 
 
 // 13. MAIN APP COMPONENT
-import { Outlet } from 'react-router-dom';
-
 const App = () => {
     const [user, setUser] = useState<User | null>(null);
     const [loading, setLoading] = useState(true);
@@ -657,7 +667,12 @@ const App = () => {
         return <LoginPage onLogin={handleLogin} t={t} />;
     }
     
-    const { GoogleOAuthProvider } = (window as any).ReactOAuthGoogle;
+    // FIX: Moved from module scope to component scope to prevent race condition
+    const { GoogleOAuthProvider } = (window as any).ReactOAuthGoogle || {};
+    
+    if (!GoogleOAuthProvider) {
+      return <div className="flex items-center justify-center w-full h-screen bg-gray-50 dark:bg-dark-primary"><BouncingLoader /></div>;
+    }
 
     return (
         <GoogleOAuthProvider clientId={GOOGLE_CLIENT_ID}>
