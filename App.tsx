@@ -1,3 +1,4 @@
+
 // Yoyo Project Management - Single File Application
 // This file contains the entire refactored React application, including all components, pages, types, and logic.
 
@@ -7,11 +8,11 @@ import { BrowserRouter, Routes, Route, Navigate, NavLink, Link, useLocation, Out
 import { initializeApp, getApps, getApp } from 'firebase/app';
 import { getAuth, onAuthStateChanged, signInWithEmailAndPassword, signOut, User } from 'firebase/auth';
 import { 
-    getFirestore, collection, onSnapshot, doc, addDoc, updateDoc, deleteDoc, query, where, writeBatch, serverTimestamp, getDocs, orderBy, arrayUnion, arrayRemove
+    collection, onSnapshot, doc, addDoc, updateDoc, deleteDoc, query, where, writeBatch, serverTimestamp, getDocs, orderBy, arrayUnion, arrayRemove, initializeFirestore
 } from 'firebase/firestore';
 import { 
-    LayoutDashboard, Users, CheckSquare, Calendar, DollarSign, AlertTriangle, FileText, Image, Plus, Settings, X, 
-    Search, Bell, LogOut, Menu, Sun, Moon, UploadCloud, Trash2, Edit, Save, PackagePlus, User as UserIcon, AlertCircle, CheckCircle, Info, Link2, ChevronDown
+    LayoutDashboard, Users, CheckSquare, Calendar, DollarSign, AlertTriangle, FileText, Plus, Settings, X, 
+    Search, Bell, LogOut, Menu, Sun, Moon, Trash2, Edit, User as UserIcon, AlertCircle, CheckCircle, Info, ChevronDown
 } from 'lucide-react';
 import { Bar, Pie, Line } from 'react-chartjs-2';
 import { Chart as ChartJS, CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend, ArcElement, PointElement, LineElement } from 'chart.js';
@@ -20,7 +21,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 // 2. CHART.JS REGISTRATION
 ChartJS.register(CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend, ArcElement, PointElement, LineElement);
 
-// 3. FIREBASE & GOOGLE DRIVE CONFIG
+// 3. FIREBASE CONFIG
 const firebaseConfig = {
   apiKey: "AIzaSyCr6zvT7MqzlLGylTUvWlWfJudgi_nFCos",
   authDomain: "yoyo-projects-management.firebaseapp.com",
@@ -31,13 +32,9 @@ const firebaseConfig = {
   measurementId: "G-9YHY63624V"
 };
 
-// Google Drive Configuration
-const GOOGLE_CLIENT_ID = "314270688402-k6b4qg9u6b356h9ur6j5kqj4i4h3h8t7.apps.googleusercontent.com";
-const DRIVE_FOLDER_ID = "1-UX_rC4avImjZyiYErWrlUFcirUqrCLB";
-
 const app = !getApps().length ? initializeApp(firebaseConfig) : getApp();
 const auth = getAuth(app);
-const db = getFirestore(app);
+const db = initializeFirestore(app, { experimentalForceLongPolling: true, useFetchStreams: false });
 const appId = firebaseConfig.projectId; // Use projectId as the identifier for the collection path
 
 // 4. INTERNATIONALIZATION (i18n)
@@ -46,20 +43,19 @@ const translations = {
     // General
     "save": "Save", "cancel": "Cancel", "delete": "Delete", "confirm": "Confirm", "edit": "Edit", "add": "Add", "urgent": "Urgent", "high": "High", "medium": "Medium", "low": "Low", "priority": "Priority", "parentTask": "Parent Task", "parent": "Parent",
     // Sidebar
-    "dashboard": "Dashboard", "tasks": "Tasks", "calendar": "Calendar", "team": "Team", "budget": "Budget", "risks": "Risks", "designs": "Designs", "projects": "Projects", "settings": "Settings", "reports": "Reports",
+    "dashboard": "Dashboard", "tasks": "Tasks", "calendar": "Calendar", "team": "Team", "budget": "Budget", "risks": "Risks", "projects": "Projects", "settings": "Settings", "reports": "Reports",
     // Header
     "signOut": "Sign Out", "profile": "Profile",
     // Login
     "loginTitle": "ProjectHub Login", "email": "Email", "password": "Password", "logIn": "Log In",
     // Modals
     "newProject": "New Project", "editProject": "Edit Project", "projectName": "Project Name", "description": "Description", "startDate": "Start Date", "endDate": "End Date", "createProject": "Create Project", "updateProject": "Update Project",
-    "deleteProjectTitle": "Delete Project", "deleteProjectMessage": "Are you sure you want to delete this project? This will permanently delete all associated tasks, team members, budget items, risks, and designs. This action cannot be undone.",
+    "deleteProjectTitle": "Delete Project", "deleteProjectMessage": "Are you sure you want to delete this project? This will permanently delete all associated tasks, team members, budget items, and risks. This action cannot be undone.",
     "deleteItemTitle": "Confirm Deletion", "deleteItemMessage": "Are you sure? This cannot be undone.",
     "addTask": "Add Task", "editTask": "Edit Task", "taskName": "Task Name", "status": "Status", "assignee": "Assignee", "dueDate": "Due Date", "progress": "Progress", "reminderDate": "Reminder Date",
     "addTeamMember": "Add Team Member", "editTeamMember": "Edit Team Member", "memberName": "Member Name", "role": "Role",
     "addBudgetItem": "Add Budget Item", "editBudgetItem": "Edit Budget Item", "category": "Category", "allocatedBudget": "Allocated Budget", "spentBudget": "Amount Spent",
     "addRisk": "Add Risk", "editRisk": "Edit Risk", "likelihood": "Likelihood", "impact": "Impact", "mitigation": "Mitigation Strategy",
-    "editDesign": "Edit Design", "designName": "Design Name",
     "parentTaskNotDoneError": "Cannot complete this task. Please finish parent task '{parentTaskName}' first.",
     "reminderToast": "Reminder for task: \"{taskName}\"",
     // Pages
@@ -71,7 +67,6 @@ const translations = {
     "teamTitle": "Team for {projectName}", "noTeam": "No Team Members", "noTeamMessage": "Add team members to your project.",
     "budgetTitle": "Budget for {projectName}", "noBudget": "No Budget Items", "noBudgetMessage": "Add budget items to track project expenses.", "allocated": "Allocated", "spent": "Spent", "remaining": "Remaining", "total": "Total",
     "risksTitle": "Risks for {projectName}", "noRisks": "No Risks Identified", "noRisksMessage": "Add potential risks to your project.",
-    "designsTitle": "Designs for {projectName}", "designsMessage": "Upload and manage design assets for your project.", "uploadDesign": "Upload New Design", "pngFile": "PNG File", "upload": "Upload", "uploading": "Uploading...", "pngOnlyError": "Only PNG files are allowed.", "uploadError": "File upload failed. Please try again.", "uploadSuccess": "Upload successful!", "noDesigns": "No Designs Yet", "noDesignsMessage": "Upload your first design using the form above.", "uploaded": "Uploaded", "connectToGoogleDrive": "Connect to Google Drive", "googleDriveConnectMessage": "Please connect to Google Drive to manage design files.",
     "profileTitle": "User Profile", "myTasks": "My Assigned Tasks", "myProjects": "My Projects", "achievements": "Achievements", "noAssignedTasks": "You have no tasks assigned to you.", "achievementCompletedProjects": "Completed {count} projects.",
     "settingsTitle": "Settings & Activity Log", "activityLog": "Activity Log", "noActivity": "No activity recorded yet.",
     "reportsTitle": "Reports for {projectName}", "projectSummary": "Project Summary", "exportToCsv": "Export to CSV", "exportToPdf": "Export to PDF",
@@ -84,20 +79,19 @@ const translations = {
     // General
     "save": "حفظ", "cancel": "إلغاء", "delete": "حذف", "confirm": "تأكيد", "edit": "تعديل", "add": "إضافة", "urgent": "عاجل", "high": "مرتفع", "medium": "متوسط", "low": "منخفض", "priority": "الأولوية", "parentTask": "المهمة الرئيسية", "parent": "رئيسي",
     // Sidebar
-    "dashboard": "لوحة التحكم", "tasks": "المهام", "calendar": "التقويم", "team": "الفريق", "budget": "الميزانية", "risks": "المخاطر", "designs": "التصاميم", "projects": "المشاريع", "settings": "الإعدادات", "reports": "التقارير",
+    "dashboard": "لوحة التحكم", "tasks": "المهام", "calendar": "التقويم", "team": "الفريق", "budget": "الميزانية", "risks": "المخاطر", "projects": "المشاريع", "settings": "الإعدادات", "reports": "التقارير",
     // Header
     "signOut": "تسجيل الخروج", "profile": "الملف الشخصي",
     // Login
     "loginTitle": "تسجيل الدخول إلى ProjectHub", "email": "البريد الإلكتروني", "password": "كلمة المرور", "logIn": "تسجيل الدخول",
     // Modals
     "newProject": "مشروع جديد", "editProject": "تعديل المشروع", "projectName": "اسم المشروع", "description": "الوصف", "startDate": "تاريخ البدء", "endDate": "تاريخ الانتهاء", "createProject": "إنشاء مشروع", "updateProject": "تحديث المشروع",
-    "deleteProjectTitle": "حذف المشروع", "deleteProjectMessage": "هل أنت متأكد أنك تريد حذف هذا المشروع؟ سيؤدي هذا إلى حذف جميع المهام وأعضاء الفريق وبنود الميزانية والمخاطر والتصاميم المرتبطة به بشكل دائم. لا يمكن التراجع عن هذا الإجراء.",
+    "deleteProjectTitle": "حذف المشروع", "deleteProjectMessage": "هل أنت متأكد أنك تريد حذف هذا المشروع؟ سيؤدي هذا إلى حذف جميع المهام وأعضاء الفريق وبنود الميزانية والمخاطر المرتبطة به بشكل دائم. لا يمكن التراجع عن هذا الإجراء.",
     "deleteItemTitle": "تأكيد الحذف", "deleteItemMessage": "هل أنت متأكد؟ لا يمكن التراجع عن هذا.",
     "addTask": "إضافة مهمة", "editTask": "تعديل المهمة", "taskName": "اسم المهمة", "status": "الحالة", "assignee": "المسؤول", "dueDate": "تاريخ الاستحقاق", "progress": "التقدم", "reminderDate": "تاريخ التذكير",
     "addTeamMember": "إضافة عضو للفريق", "editTeamMember": "تعديل عضو الفريق", "memberName": "اسم العضو", "role": "الدور",
     "addBudgetItem": "إضافة بند ميزانية", "editBudgetItem": "تعديل بند الميزانية", "category": "الفئة", "allocatedBudget": "الميزانية المخصصة", "spentBudget": "المبلغ المصروف",
     "addRisk": "إضافة مخاطرة", "editRisk": "تعديل المخاطرة", "likelihood": "الاحتمالية", "impact": "التأثير", "mitigation": "استراتيجية التخفيف",
-    "editDesign": "تعديل التصميم", "designName": "اسم التصميم",
     "parentTaskNotDoneError": "لا يمكن إكمال هذه المهمة. يرجى إنهاء المهمة الرئيسية '{parentTaskName}' أولاً.",
     "reminderToast": "تذكير للمهمة: \"{taskName}\"",
     // Pages
@@ -109,7 +103,6 @@ const translations = {
     "teamTitle": "فريق مشروع {projectName}", "noTeam": "لا يوجد أعضاء في الفريق", "noTeamMessage": "أضف أعضاء الفريق إلى مشروعك.",
     "budgetTitle": "ميزانية مشروع {projectName}", "noBudget": "لا توجد بنود في الميزانية", "noBudgetMessage": "أضف بنود الميزانية لتتبع نفقات المشروع.", "allocated": "المخصص", "spent": "المصروف", "remaining": "المتبقي", "total": "الإجمالي",
     "risksTitle": "مخاطر مشروع {projectName}", "noRisks": "لم يتم تحديد مخاطر", "noRisksMessage": "أضف المخاطر المحتملة لمشروعك.",
-    "designsTitle": "تصاميم مشروع {projectName}", "designsMessage": "قم بتحميل وإدارة أصول التصميم لمشروعك.", "uploadDesign": "تحميل تصميم جديد", "pngFile": "ملف PNG", "upload": "تحميل", "uploading": "جاري التحميل...", "pngOnlyError": "يُسمح بملفات PNG فقط.", "uploadError": "فشل تحميل الملف. يرجى المحاولة مرة أخرى.", "uploadSuccess": "تم التحميل بنجاح!", "noDesigns": "لا توجد تصاميم بعد", "noDesignsMessage": "قم بتحميل تصميمك الأول باستخدام النموذج أعلاه.", "uploaded": "تم الرفع", "connectToGoogleDrive": "الاتصال بـ Google Drive", "googleDriveConnectMessage": "يرجى الاتصال بـ Google Drive لإدارة ملفات التصميم.",
     "profileTitle": "الملف الشخصي للمستخدم", "myTasks": "المهام المسندة إلي", "myProjects": "مشاريعي", "achievements": "الإنجازات", "noAssignedTasks": "ليس لديك مهام مسندة إليك.", "achievementCompletedProjects": "أكملت {count} مشاريع.",
     "settingsTitle": "الإعدادات وسجل النشاط", "activityLog": "سجل النشاط", "noActivity": "لم يتم تسجيل أي نشاط بعد.",
     "reportsTitle": "تقارير مشروع {projectName}", "projectSummary": "ملخص المشروع", "exportToCsv": "تصدير إلى CSV", "exportToPdf": "تصدير إلى PDF",
@@ -152,12 +145,6 @@ export interface Risk {
 }
 export interface Project {
   id:string; ownerId:string; name:string; description:string; startDate:string; endDate:string; status?: string; members: string[];
-}
-export interface Design {
-  id:string; // Google Drive file ID
-  name:string;
-  webViewLink: string; // Link to view in Drive UI
-  createdTime: string;
 }
 export interface ActivityLog {
   id:string; userEmail:string; action:string; timestamp:any; // Firestore Timestamp
@@ -299,7 +286,7 @@ const Header: React.FC<{ user: User | null; onSignOut: () => void; onMenuClick: 
 };
 const Sidebar: React.FC<{ projects: Project[]; selectedProjectId: string | null; onSelectProject: (id: string) => void; onNewProject: () => void; onEditProject: (project: Project) => void; onDeleteProject: (id: string) => void; isOpen: boolean; onClose: () => void; t: (key: string) => string; }> = ({ projects, selectedProjectId, onSelectProject, onNewProject, onEditProject, onDeleteProject, isOpen, onClose, t }) => {
     const navLinks = [
-        { name: t('dashboard'), icon: <LayoutDashboard size={20} />, path: '/' }, { name: t('tasks'), icon: <CheckSquare size={20} />, path: '/tasks' }, { name: t('calendar'), icon: <Calendar size={20} />, path: '/calendar' }, { name: t('team'), icon: <Users size={20} />, path: '/team' }, { name: t('budget'), icon: <DollarSign size={20} />, path: '/budget' }, { name: t('risks'), icon: <AlertTriangle size={20} />, path: '/risks' }, { name: t('designs'), icon: <Image size={20} />, path: '/designs' }, { name: t('reports'), icon: <FileText size={20} />, path: '/reports' }, { name: t('settings'), icon: <Settings size={20} />, path: '/settings' },
+        { name: t('dashboard'), icon: <LayoutDashboard size={20} />, path: '/' }, { name: t('tasks'), icon: <CheckSquare size={20} />, path: '/tasks' }, { name: t('calendar'), icon: <Calendar size={20} />, path: '/calendar' }, { name: t('team'), icon: <Users size={20} />, path: '/team' }, { name: t('budget'), icon: <DollarSign size={20} />, path: '/budget' }, { name: t('risks'), icon: <AlertTriangle size={20} />, path: '/risks' }, { name: t('reports'), icon: <FileText size={20} />, path: '/reports' }, { name: t('settings'), icon: <Settings size={20} />, path: '/settings' },
     ];
     return (
         <>
@@ -329,6 +316,40 @@ const Sidebar: React.FC<{ projects: Project[]; selectedProjectId: string | null;
             </div>
           </aside>
         </>
+    );
+};
+
+const Modal: React.FC<{ isOpen: boolean; onClose: () => void; title: string; children: React.ReactNode }> = ({ isOpen, onClose, title, children }) => {
+    if (!isOpen) return null;
+    return (
+        <AnimatePresence>
+            {isOpen && (
+                <motion.div
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                    className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black bg-opacity-60 backdrop-blur-sm"
+                    onClick={onClose}
+                >
+                    <motion.div
+                        initial={{ scale: 0.9, opacity: 0 }}
+                        animate={{ scale: 1, opacity: 1 }}
+                        exit={{ scale: 0.9, opacity: 0 }}
+                        transition={{ type: "spring", stiffness: 300, damping: 30 }}
+                        className="relative w-full max-w-4xl bg-white rounded-lg shadow-xl dark:bg-dark-secondary"
+                        onClick={(e) => e.stopPropagation()}
+                    >
+                        <div className="flex items-center justify-between p-4 border-b dark:border-gray-700">
+                            <h3 className="text-lg font-semibold">{title}</h3>
+                            <button onClick={onClose} className="p-1 rounded-full text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700">
+                                <X size={20} />
+                            </button>
+                        </div>
+                        <div className="p-4 max-h-[80vh] overflow-auto">{children}</div>
+                    </motion.div>
+                </motion.div>
+            )}
+        </AnimatePresence>
     );
 };
 
@@ -428,160 +449,7 @@ const ProjectContext = createContext<ProjectContextType>({ currentProject: null,
 export const useProjectContext = () => useContext(ProjectContext);
 
 
-// 12. DESIGNS PAGE (WITH GOOGLE DRIVE INTEGRATION)
-const DesignsPage: React.FC<{ t: (key: string) => string; locale: Locale }> = ({ t, locale }) => {
-    const { currentProject } = useProjectContext();
-    const { addToast } = useToast();
-    const [token, setToken] = useState<any>(null);
-    const [designs, setDesigns] = useState<Design[]>([]);
-    const [isLoading, setIsLoading] = useState(true);
-    const [isUploading, setIsUploading] = useState(false);
-    const fileInputRef = useRef<HTMLInputElement>(null);
-
-    const useGoogleLogin = (window as any).ReactOAuthGoogle.useGoogleLogin;
-
-    const login = useGoogleLogin({
-        onSuccess: (tokenResponse: any) => setToken(tokenResponse),
-        scope: 'https://www.googleapis.com/auth/drive.file',
-    });
-
-    const fetchDesigns = async () => {
-        if (!token) return;
-        setIsLoading(true);
-        try {
-            const response = await fetch(`https://www.googleapis.com/drive/v3/files?q='${DRIVE_FOLDER_ID}' in parents and trashed = false&fields=files(id,name,webViewLink,createdTime)`, {
-                headers: { Authorization: `Bearer ${token.access_token}` }
-            });
-            if (!response.ok) throw new Error('Failed to fetch files');
-            const data = await response.json();
-            setDesigns(data.files || []);
-        } catch (error) {
-            console.error(error);
-            addToast(t('uploadError'), 'error');
-        } finally {
-            setIsLoading(false);
-        }
-    };
-
-    useEffect(() => {
-        if(token) fetchDesigns();
-        else setIsLoading(false)
-    }, [token]);
-
-    const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
-        const file = event.target.files?.[0];
-        if (!file) return;
-
-        if (file.type !== 'image/png') {
-            addToast(t('pngOnlyError'), 'error');
-            return;
-        }
-
-        setIsUploading(true);
-        try {
-            const metadata = { name: file.name, parents: [DRIVE_FOLDER_ID] };
-            const form = new FormData();
-            form.append('metadata', new Blob([JSON.stringify(metadata)], { type: 'application/json' }));
-            form.append('file', file);
-
-            const res = await fetch('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart', {
-                method: 'POST',
-                headers: { Authorization: `Bearer ${token.access_token}` },
-                body: form,
-            });
-
-            if (!res.ok) throw new Error('Upload failed');
-            addToast(t('uploadSuccess'), 'success');
-            fetchDesigns();
-        } catch (error) {
-            console.error(error);
-            addToast(t('uploadError'), 'error');
-        } finally {
-            setIsUploading(false);
-            if (fileInputRef.current) fileInputRef.current.value = "";
-        }
-    };
-
-    const handleDelete = async (fileId: string) => {
-        if (!window.confirm(t('deleteItemMessage'))) return;
-        try {
-            const res = await fetch(`https://www.googleapis.com/drive/v3/files/${fileId}`, {
-                method: 'DELETE',
-                headers: { Authorization: `Bearer ${token.access_token}` }
-            });
-            if (!res.ok) throw new Error('Delete failed');
-            addToast('File deleted successfully', 'success');
-            setDesigns(designs.filter(d => d.id !== fileId));
-        } catch (error) {
-            console.error(error);
-            addToast('Failed to delete file', 'error');
-        }
-    };
-    
-    if (!token) {
-        return (
-            <div className="p-6 md:p-8">
-                <h1 className="text-2xl font-semibold text-gray-900 dark:text-white">{t('designsTitle').replace('{projectName}', currentProject?.name || '')}</h1>
-                <div className="mt-8">
-                    <EmptyState
-                        title={t('connectToGoogleDrive')}
-                        message={t('googleDriveConnectMessage')}
-                        action={<button onClick={() => login()} className="px-4 py-2 text-sm font-medium text-white bg-primary rounded-md hover:bg-primary-dark">{t('connectToGoogleDrive')}</button>}
-                    />
-                </div>
-            </div>
-        );
-    }
-    
-    return (
-        <div className="p-6 md:p-8">
-            <h1 className="text-2xl font-semibold text-gray-900 dark:text-white">{t('designsTitle').replace('{projectName}', currentProject?.name || '')}</h1>
-            <p className="mt-1 text-gray-600 dark:text-gray-400">{t('designsMessage')}</p>
-
-            <div className="mt-6 p-6 bg-white rounded-lg shadow-md dark:bg-dark-secondary">
-                <h2 className="text-lg font-semibold">{t('uploadDesign')}</h2>
-                <div className="mt-4">
-                    <label htmlFor="file-upload" className="sr-only">{t('pngFile')}</label>
-                    <input ref={fileInputRef} id="file-upload" type="file" accept="image/png" onChange={handleFileUpload} disabled={isUploading} className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-primary/10 file:text-primary dark:file:bg-primary/20 dark:file:text-light hover:file:bg-primary/20" />
-                </div>
-                {isUploading && <div className="flex items-center mt-4 space-x-2 text-sm text-gray-500"><BouncingLoader /><p>{t('uploading')}</p></div>}
-            </div>
-
-            <div className="mt-8">
-                {isLoading ? <BouncingLoader /> : designs.length === 0 ? (
-                    <EmptyState title={t('noDesigns')} message={t('noDesignsMessage')} />
-                ) : (
-                    <div className="overflow-x-auto bg-white rounded-lg shadow dark:bg-dark-secondary">
-                        <table className="w-full text-sm text-left text-gray-500 dark:text-gray-400">
-                            <thead className="text-xs text-gray-700 uppercase bg-gray-50 dark:bg-gray-700 dark:text-gray-400">
-                                <tr>
-                                    <th scope="col" className="px-6 py-3">{t('designName')}</th>
-                                    <th scope="col" className="px-6 py-3">{t('uploaded')}</th>
-                                    <th scope="col" className="px-6 py-3"><span className="sr-only">Actions</span></th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {designs.map((design) => (
-                                    <motion.tr key={design.id} initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="border-b dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600">
-                                        <th scope="row" className="px-6 py-4 font-medium text-gray-900 whitespace-nowrap dark:text-white">{design.name}</th>
-                                        <td className="px-6 py-4">{formatDate(design.createdTime, locale)}</td>
-                                        <td className="px-6 py-4 text-right">
-                                            <a href={design.webViewLink} target="_blank" rel="noopener noreferrer" className="mr-4 font-medium text-primary dark:text-primary-light hover:underline"><Link2 size={16} className="inline"/></a>
-                                            <button onClick={() => handleDelete(design.id)} className="font-medium text-red-600 dark:text-red-500 hover:underline"><Trash2 size={16} className="inline"/></button>
-                                        </td>
-                                    </motion.tr>
-                                ))}
-                            </tbody>
-                        </table>
-                    </div>
-                )}
-            </div>
-        </div>
-    );
-};
-
-
-// 13. MAIN APP COMPONENT
+// 12. MAIN APP COMPONENT
 const App = () => {
     const [user, setUser] = useState<User | null>(null);
     const [loading, setLoading] = useState(true);
@@ -595,8 +463,6 @@ const App = () => {
     const currentProject = useMemo(() => projects.find(p => p.id === selectedProjectId) || null, [projects, selectedProjectId]);
 
     const t = (key: string) => (translations[locale] as any)[key] || key;
-
-    const GoogleOAuthProvider = (window as any).ReactOAuthGoogle?.GoogleOAuthProvider;
 
     useEffect(() => {
         document.documentElement.classList.toggle('dark', theme === 'dark');
@@ -656,62 +522,55 @@ const App = () => {
     if (!user) {
         return <LoginPage onLogin={handleLogin} t={t} />;
     }
-
-    if (!GoogleOAuthProvider) {
-        return <div className="flex items-center justify-center w-full h-screen bg-gray-50 dark:bg-dark-primary"><BouncingLoader /></div>;
-    }
     
     return (
-        <GoogleOAuthProvider clientId={GOOGLE_CLIENT_ID}>
-            <ToastProvider>
-                <ProjectContext.Provider value={{ currentProject, projects }}>
-                    <BrowserRouter>
-                        <div className={`flex h-screen bg-gray-100 dark:bg-dark-primary text-gray-900 dark:text-gray-100`}>
-                            <Sidebar 
-                                projects={projects}
-                                selectedProjectId={selectedProjectId}
-                                onSelectProject={handleSelectProject}
-                                onNewProject={() => alert('New Project clicked')}
-                                onEditProject={(p) => alert(`Edit ${p.name}`)}
-                                onDeleteProject={(id) => alert(`Delete ${id}`)}
-                                isOpen={isSidebarOpen}
-                                onClose={() => setSidebarOpen(false)}
+        <ToastProvider>
+            <ProjectContext.Provider value={{ currentProject, projects }}>
+                <BrowserRouter>
+                    <div className={`flex h-screen bg-gray-100 dark:bg-dark-primary text-gray-900 dark:text-gray-100`}>
+                        <Sidebar 
+                            projects={projects}
+                            selectedProjectId={selectedProjectId}
+                            onSelectProject={handleSelectProject}
+                            onNewProject={() => alert('New Project clicked')}
+                            onEditProject={(p) => alert(`Edit ${p.name}`)}
+                            onDeleteProject={(id) => alert(`Delete ${id}`)}
+                            isOpen={isSidebarOpen}
+                            onClose={() => setSidebarOpen(false)}
+                            t={t}
+                        />
+                        <div className="flex flex-col flex-1 overflow-hidden">
+                            <Header 
+                                user={user}
+                                onSignOut={handleSignOut}
+                                onMenuClick={() => setSidebarOpen(true)}
+                                theme={theme}
+                                toggleTheme={toggleTheme}
+                                locale={locale}
+                                toggleLocale={toggleLocale}
                                 t={t}
                             />
-                            <div className="flex flex-col flex-1 overflow-hidden">
-                                <Header 
-                                    user={user}
-                                    onSignOut={handleSignOut}
-                                    onMenuClick={() => setSidebarOpen(true)}
-                                    theme={theme}
-                                    toggleTheme={toggleTheme}
-                                    locale={locale}
-                                    toggleLocale={toggleLocale}
-                                    t={t}
-                                />
-                                <main className="flex-1 overflow-x-hidden overflow-y-auto bg-gray-50 dark:bg-dark-primary">
-                                    <Routes>
-                                        <Route element={<ProjectScope t={t} />}>
-                                            <Route path="/" element={<PlaceholderPage title={t('dashboard')} />} />
-                                            <Route path="/tasks" element={<PlaceholderPage title={t('tasks')} />} />
-                                            <Route path="/calendar" element={<PlaceholderPage title={t('calendar')} />} />
-                                            <Route path="/team" element={<PlaceholderPage title={t('team')} />} />
-                                            <Route path="/budget" element={<PlaceholderPage title={t('budget')} />} />
-                                            <Route path="/risks" element={<PlaceholderPage title={t('risks')} />} />
-                                            <Route path="/designs" element={<DesignsPage t={t} locale={locale} />} />
-                                            <Route path="/reports" element={<PlaceholderPage title={t('reports')} />} />
-                                            <Route path="/settings" element={<PlaceholderPage title={t('settings')} />} />
-                                        </Route>
-                                        <Route path="/profile" element={<PlaceholderPage title={t('profile')} />} />
-                                        <Route path="*" element={<Navigate to="/" />} />
-                                    </Routes>
-                                </main>
-                            </div>
+                            <main className="flex-1 overflow-x-hidden overflow-y-auto bg-gray-50 dark:bg-dark-primary">
+                                <Routes>
+                                    <Route element={<ProjectScope t={t} />}>
+                                        <Route path="/" element={<PlaceholderPage title={t('dashboard')} />} />
+                                        <Route path="/tasks" element={<PlaceholderPage title={t('tasks')} />} />
+                                        <Route path="/calendar" element={<PlaceholderPage title={t('calendar')} />} />
+                                        <Route path="/team" element={<PlaceholderPage title={t('team')} />} />
+                                        <Route path="/budget" element={<PlaceholderPage title={t('budget')} />} />
+                                        <Route path="/risks" element={<PlaceholderPage title={t('risks')} />} />
+                                        <Route path="/reports" element={<PlaceholderPage title={t('reports')} />} />
+                                        <Route path="/settings" element={<PlaceholderPage title={t('settings')} />} />
+                                    </Route>
+                                    <Route path="/profile" element={<PlaceholderPage title={t('profile')} />} />
+                                    <Route path="*" element={<Navigate to="/" />} />
+                                </Routes>
+                            </main>
                         </div>
-                    </BrowserRouter>
-                </ProjectContext.Provider>
-            </ToastProvider>
-        </GoogleOAuthProvider>
+                    </div>
+                </BrowserRouter>
+            </ProjectContext.Provider>
+        </ToastProvider>
     );
 };
 
