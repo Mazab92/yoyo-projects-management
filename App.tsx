@@ -33,7 +33,7 @@ const firebaseConfig = {
 
 // Google Drive Configuration
 const GOOGLE_CLIENT_ID = "314270688402-k6b4qg9u6b356h9ur6j5kqj4i4h3h8t7.apps.googleusercontent.com";
-const DRIVE_FOLDER_ID = "1gM3QYkQZ5xY5Z5Y5Z5Y5Z5Y5Z5Y5Z5Y5"; // Placeholder for the shared Google Drive folder ID
+const DRIVE_FOLDER_ID = "1-UX_rC4avImjZyiYErWrlUFcirUqrCLB";
 
 const app = !getApps().length ? initializeApp(firebaseConfig) : getApp();
 const auth = getAuth(app);
@@ -154,12 +154,10 @@ export interface Project {
   id:string; ownerId:string; name:string; description:string; startDate:string; endDate:string; status?: string; members: string[];
 }
 export interface Design {
-  id:string; // Firestore doc ID
+  id:string; // Google Drive file ID
   name:string;
-  fileId: string; // Google Drive file ID
-  webContentLink: string; // Link to download content
   webViewLink: string; // Link to view in Drive UI
-  uploadedAt:any; // Firestore Timestamp
+  createdTime: string;
 }
 export interface ActivityLog {
   id:string; userEmail:string; action:string; timestamp:any; // Firestore Timestamp
@@ -334,8 +332,6 @@ const Sidebar: React.FC<{ projects: Project[]; selectedProjectId: string | null;
     );
 };
 
-// --- START OF ADDED CODE TO FIX MISSING APP COMPONENT AND EXPORT ---
-
 // 9. PLACEHOLDER PAGE COMPONENTS
 const PlaceholderPage: React.FC<{ title: string; }> = ({ title }) => (
     <div className="p-6 md:p-8">
@@ -368,7 +364,8 @@ const ProjectScope: React.FC<{t: (key: string) => string}> = ({ t }) => {
 
 
 // 10. AUTHENTICATION PAGE
-const LoginPage: React.FC<{ onLogin: (email: string, pass: string) => Promise<void>; t: (key: string) => string; }> = ({ onLogin, t }) => {
+// FIX: Changed onLogin return type from Promise<void> to Promise<any> to match the return type of signInWithEmailAndPassword.
+const LoginPage: React.FC<{ onLogin: (email: string, pass: string) => Promise<any>; t: (key: string) => string; }> = ({ onLogin, t }) => {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [error, setError] = useState('');
@@ -431,7 +428,160 @@ const ProjectContext = createContext<ProjectContextType>({ currentProject: null,
 export const useProjectContext = () => useContext(ProjectContext);
 
 
-// 12. MAIN APP COMPONENT
+// 12. DESIGNS PAGE (WITH GOOGLE DRIVE INTEGRATION)
+const DesignsPage: React.FC<{ t: (key: string) => string; locale: Locale }> = ({ t, locale }) => {
+    const { currentProject } = useProjectContext();
+    const { addToast } = useToast();
+    const [token, setToken] = useState<any>(null);
+    const [designs, setDesigns] = useState<Design[]>([]);
+    const [isLoading, setIsLoading] = useState(true);
+    const [isUploading, setIsUploading] = useState(false);
+    const fileInputRef = useRef<HTMLInputElement>(null);
+
+    const { useGoogleLogin } = (window as any).ReactOAuthGoogle;
+
+    const login = useGoogleLogin({
+        onSuccess: (tokenResponse) => setToken(tokenResponse),
+        scope: 'https://www.googleapis.com/auth/drive.file',
+    });
+
+    const fetchDesigns = async () => {
+        if (!token) return;
+        setIsLoading(true);
+        try {
+            const response = await fetch(`https://www.googleapis.com/drive/v3/files?q='${DRIVE_FOLDER_ID}' in parents and trashed = false&fields=files(id,name,webViewLink,createdTime)`, {
+                headers: { Authorization: `Bearer ${token.access_token}` }
+            });
+            if (!response.ok) throw new Error('Failed to fetch files');
+            const data = await response.json();
+            setDesigns(data.files || []);
+        } catch (error) {
+            console.error(error);
+            addToast(t('uploadError'), 'error');
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
+    useEffect(() => {
+        if(token) fetchDesigns();
+        else setIsLoading(false)
+    }, [token]);
+
+    const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+        const file = event.target.files?.[0];
+        if (!file) return;
+
+        if (file.type !== 'image/png') {
+            addToast(t('pngOnlyError'), 'error');
+            return;
+        }
+
+        setIsUploading(true);
+        try {
+            const metadata = { name: file.name, parents: [DRIVE_FOLDER_ID] };
+            const form = new FormData();
+            form.append('metadata', new Blob([JSON.stringify(metadata)], { type: 'application/json' }));
+            form.append('file', file);
+
+            const res = await fetch('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart', {
+                method: 'POST',
+                headers: { Authorization: `Bearer ${token.access_token}` },
+                body: form,
+            });
+
+            if (!res.ok) throw new Error('Upload failed');
+            addToast(t('uploadSuccess'), 'success');
+            fetchDesigns();
+        } catch (error) {
+            console.error(error);
+            addToast(t('uploadError'), 'error');
+        } finally {
+            setIsUploading(false);
+            if (fileInputRef.current) fileInputRef.current.value = "";
+        }
+    };
+
+    const handleDelete = async (fileId: string) => {
+        if (!window.confirm(t('deleteItemMessage'))) return;
+        try {
+            const res = await fetch(`https://www.googleapis.com/drive/v3/files/${fileId}`, {
+                method: 'DELETE',
+                headers: { Authorization: `Bearer ${token.access_token}` }
+            });
+            if (!res.ok) throw new Error('Delete failed');
+            addToast('File deleted successfully', 'success');
+            setDesigns(designs.filter(d => d.id !== fileId));
+        } catch (error) {
+            console.error(error);
+            addToast('Failed to delete file', 'error');
+        }
+    };
+
+    if (!token) {
+        return (
+            <div className="p-6 md:p-8">
+                <h1 className="text-2xl font-semibold text-gray-900 dark:text-white">{t('designsTitle').replace('{projectName}', currentProject?.name || '')}</h1>
+                <div className="mt-8">
+                    <EmptyState
+                        title={t('connectToGoogleDrive')}
+                        message={t('googleDriveConnectMessage')}
+                        action={<button onClick={() => login()} className="px-4 py-2 text-sm font-medium text-white bg-primary rounded-md hover:bg-primary-dark">{t('connectToGoogleDrive')}</button>}
+                    />
+                </div>
+            </div>
+        );
+    }
+    
+    return (
+        <div className="p-6 md:p-8">
+            <h1 className="text-2xl font-semibold text-gray-900 dark:text-white">{t('designsTitle').replace('{projectName}', currentProject?.name || '')}</h1>
+            <p className="mt-1 text-gray-600 dark:text-gray-400">{t('designsMessage')}</p>
+
+            <div className="mt-6 p-6 bg-white rounded-lg shadow-md dark:bg-dark-secondary">
+                <h2 className="text-lg font-semibold">{t('uploadDesign')}</h2>
+                <div className="mt-4">
+                    <label htmlFor="file-upload" className="sr-only">{t('pngFile')}</label>
+                    <input ref={fileInputRef} id="file-upload" type="file" accept="image/png" onChange={handleFileUpload} disabled={isUploading} className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-primary/10 file:text-primary dark:file:bg-primary/20 dark:file:text-light hover:file:bg-primary/20" />
+                </div>
+                {isUploading && <div className="flex items-center mt-4 space-x-2 text-sm text-gray-500"><BouncingLoader /><p>{t('uploading')}</p></div>}
+            </div>
+
+            <div className="mt-8">
+                {isLoading ? <BouncingLoader /> : designs.length === 0 ? (
+                    <EmptyState title={t('noDesigns')} message={t('noDesignsMessage')} />
+                ) : (
+                    <div className="overflow-x-auto bg-white rounded-lg shadow dark:bg-dark-secondary">
+                        <table className="w-full text-sm text-left text-gray-500 dark:text-gray-400">
+                            <thead className="text-xs text-gray-700 uppercase bg-gray-50 dark:bg-gray-700 dark:text-gray-400">
+                                <tr>
+                                    <th scope="col" className="px-6 py-3">{t('designName')}</th>
+                                    <th scope="col" className="px-6 py-3">{t('uploaded')}</th>
+                                    <th scope="col" className="px-6 py-3"><span className="sr-only">Actions</span></th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {designs.map((design) => (
+                                    <motion.tr key={design.id} initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="border-b dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600">
+                                        <th scope="row" className="px-6 py-4 font-medium text-gray-900 whitespace-nowrap dark:text-white">{design.name}</th>
+                                        <td className="px-6 py-4">{formatDate(design.createdTime, locale)}</td>
+                                        <td className="px-6 py-4 text-right">
+                                            <a href={design.webViewLink} target="_blank" rel="noopener noreferrer" className="mr-4 font-medium text-primary dark:text-primary-light hover:underline"><Link2 size={16} className="inline"/></a>
+                                            <button onClick={() => handleDelete(design.id)} className="font-medium text-red-600 dark:text-red-500 hover:underline"><Trash2 size={16} className="inline"/></button>
+                                        </td>
+                                    </motion.tr>
+                                ))}
+                            </tbody>
+                        </table>
+                    </div>
+                )}
+            </div>
+        </div>
+    );
+};
+
+
+// 13. MAIN APP COMPONENT
 import { Outlet } from 'react-router-dom';
 
 const App = () => {
@@ -507,55 +657,59 @@ const App = () => {
         return <LoginPage onLogin={handleLogin} t={t} />;
     }
     
+    const { GoogleOAuthProvider } = (window as any).ReactOAuthGoogle;
+
     return (
-        <ToastProvider>
-            <ProjectContext.Provider value={{ currentProject, projects }}>
-                <BrowserRouter>
-                    <div className={`flex h-screen bg-gray-100 dark:bg-dark-primary text-gray-900 dark:text-gray-100`}>
-                        <Sidebar 
-                            projects={projects}
-                            selectedProjectId={selectedProjectId}
-                            onSelectProject={handleSelectProject}
-                            onNewProject={() => alert('New Project clicked')}
-                            onEditProject={(p) => alert(`Edit ${p.name}`)}
-                            onDeleteProject={(id) => alert(`Delete ${id}`)}
-                            isOpen={isSidebarOpen}
-                            onClose={() => setSidebarOpen(false)}
-                            t={t}
-                        />
-                        <div className="flex flex-col flex-1 overflow-hidden">
-                            <Header 
-                                user={user}
-                                onSignOut={handleSignOut}
-                                onMenuClick={() => setSidebarOpen(true)}
-                                theme={theme}
-                                toggleTheme={toggleTheme}
-                                locale={locale}
-                                toggleLocale={toggleLocale}
+        <GoogleOAuthProvider clientId={GOOGLE_CLIENT_ID}>
+            <ToastProvider>
+                <ProjectContext.Provider value={{ currentProject, projects }}>
+                    <BrowserRouter>
+                        <div className={`flex h-screen bg-gray-100 dark:bg-dark-primary text-gray-900 dark:text-gray-100`}>
+                            <Sidebar 
+                                projects={projects}
+                                selectedProjectId={selectedProjectId}
+                                onSelectProject={handleSelectProject}
+                                onNewProject={() => alert('New Project clicked')}
+                                onEditProject={(p) => alert(`Edit ${p.name}`)}
+                                onDeleteProject={(id) => alert(`Delete ${id}`)}
+                                isOpen={isSidebarOpen}
+                                onClose={() => setSidebarOpen(false)}
                                 t={t}
                             />
-                            <main className="flex-1 overflow-x-hidden overflow-y-auto bg-gray-50 dark:bg-dark-primary">
-                                <Routes>
-                                    <Route element={<ProjectScope t={t} />}>
-                                        <Route path="/" element={<PlaceholderPage title={t('dashboard')} />} />
-                                        <Route path="/tasks" element={<PlaceholderPage title={t('tasks')} />} />
-                                        <Route path="/calendar" element={<PlaceholderPage title={t('calendar')} />} />
-                                        <Route path="/team" element={<PlaceholderPage title={t('team')} />} />
-                                        <Route path="/budget" element={<PlaceholderPage title={t('budget')} />} />
-                                        <Route path="/risks" element={<PlaceholderPage title={t('risks')} />} />
-                                        <Route path="/designs" element={<PlaceholderPage title={t('designs')} />} />
-                                        <Route path="/reports" element={<PlaceholderPage title={t('reports')} />} />
-                                        <Route path="/settings" element={<PlaceholderPage title={t('settings')} />} />
-                                    </Route>
-                                    <Route path="/profile" element={<PlaceholderPage title={t('profile')} />} />
-                                    <Route path="*" element={<Navigate to="/" />} />
-                                </Routes>
-                            </main>
+                            <div className="flex flex-col flex-1 overflow-hidden">
+                                <Header 
+                                    user={user}
+                                    onSignOut={handleSignOut}
+                                    onMenuClick={() => setSidebarOpen(true)}
+                                    theme={theme}
+                                    toggleTheme={toggleTheme}
+                                    locale={locale}
+                                    toggleLocale={toggleLocale}
+                                    t={t}
+                                />
+                                <main className="flex-1 overflow-x-hidden overflow-y-auto bg-gray-50 dark:bg-dark-primary">
+                                    <Routes>
+                                        <Route element={<ProjectScope t={t} />}>
+                                            <Route path="/" element={<PlaceholderPage title={t('dashboard')} />} />
+                                            <Route path="/tasks" element={<PlaceholderPage title={t('tasks')} />} />
+                                            <Route path="/calendar" element={<PlaceholderPage title={t('calendar')} />} />
+                                            <Route path="/team" element={<PlaceholderPage title={t('team')} />} />
+                                            <Route path="/budget" element={<PlaceholderPage title={t('budget')} />} />
+                                            <Route path="/risks" element={<PlaceholderPage title={t('risks')} />} />
+                                            <Route path="/designs" element={<DesignsPage t={t} locale={locale} />} />
+                                            <Route path="/reports" element={<PlaceholderPage title={t('reports')} />} />
+                                            <Route path="/settings" element={<PlaceholderPage title={t('settings')} />} />
+                                        </Route>
+                                        <Route path="/profile" element={<PlaceholderPage title={t('profile')} />} />
+                                        <Route path="*" element={<Navigate to="/" />} />
+                                    </Routes>
+                                </main>
+                            </div>
                         </div>
-                    </div>
-                </BrowserRouter>
-            </ProjectContext.Provider>
-        </ToastProvider>
+                    </BrowserRouter>
+                </ProjectContext.Provider>
+            </ToastProvider>
+        </GoogleOAuthProvider>
     );
 };
 
