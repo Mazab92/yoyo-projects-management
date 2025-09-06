@@ -17,7 +17,8 @@
     "react-chartjs-2": "^5.3.0",
     "chart.js": "^4.5.0",
     "framer-motion": "^11.3.19",
-    "@google/genai": "^1.17.0"
+    "@google/genai": "^1.17.0",
+    "@react-oauth/google": "1.12.1"
   },
   "devDependencies": {
     "@types/node": "^22.14.0",

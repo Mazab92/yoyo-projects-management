@@ -16,6 +16,7 @@ import {
 import { Bar, Pie, Line } from 'react-chartjs-2';
 import { Chart as ChartJS, CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend, ArcElement, PointElement, LineElement } from 'chart.js';
 import { motion, AnimatePresence } from 'framer-motion';
+import { GoogleOAuthProvider, useGoogleLogin } from '@react-oauth/google';
 
 // 2. CHART.JS REGISTRATION
 ChartJS.register(CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend, ArcElement, PointElement, LineElement);
@@ -438,13 +439,10 @@ const DesignsPage: React.FC<{ t: (key: string) => string; locale: Locale }> = ({
     const [isUploading, setIsUploading] = useState(false);
     const fileInputRef = useRef<HTMLInputElement>(null);
 
-    // FIX: Moved from module scope to component scope to prevent race condition
-    const { useGoogleLogin } = (window as any).ReactOAuthGoogle || {};
-
-    const login = useGoogleLogin ? useGoogleLogin({
+    const login = useGoogleLogin({
         onSuccess: (tokenResponse) => setToken(tokenResponse),
         scope: 'https://www.googleapis.com/auth/drive.file',
-    }) : () => { console.error("Google Login not initialized"); login()};
+    });
 
     const fetchDesigns = async () => {
         if (!token) return;
@@ -519,17 +517,6 @@ const DesignsPage: React.FC<{ t: (key: string) => string; locale: Locale }> = ({
         }
     };
     
-    if (!useGoogleLogin) {
-      return (
-            <div className="p-6 md:p-8">
-                <h1 className="text-2xl font-semibold text-gray-900 dark:text-white">{t('designsTitle').replace('{projectName}', currentProject?.name || '')}</h1>
-                <div className="flex items-center justify-center mt-8">
-                    <BouncingLoader />
-                </div>
-            </div>
-        );
-    }
-
     if (!token) {
         return (
             <div className="p-6 md:p-8">
@@ -667,13 +654,6 @@ const App = () => {
         return <LoginPage onLogin={handleLogin} t={t} />;
     }
     
-    // FIX: Moved from module scope to component scope to prevent race condition
-    const { GoogleOAuthProvider } = (window as any).ReactOAuthGoogle || {};
-    
-    if (!GoogleOAuthProvider) {
-      return <div className="flex items-center justify-center w-full h-screen bg-gray-50 dark:bg-dark-primary"><BouncingLoader /></div>;
-    }
-
     return (
         <GoogleOAuthProvider clientId={GOOGLE_CLIENT_ID}>
             <ToastProvider>
