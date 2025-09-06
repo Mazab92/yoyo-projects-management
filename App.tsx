@@ -1,12 +1,9 @@
-
-
 // Yoyo Project Management - Single File Application
 // This file contains the entire refactored React application, including all components, pages, types, and logic.
 
 // 1. IMPORTS
 import React, { useState, useEffect, useRef, ReactNode, createContext, useContext, useMemo } from 'react';
-import { BrowserRouter, Routes, Route, Navigate, NavLink, Link } from 'react-router-dom';
-// Fix: Use named imports for 'firebase/app' to resolve module export errors.
+import { BrowserRouter, Routes, Route, Navigate, NavLink, Link, useLocation } from 'react-router-dom';
 import { initializeApp, getApps, getApp } from 'firebase/app';
 import { getAuth, onAuthStateChanged, signInWithEmailAndPassword, signOut, User } from 'firebase/auth';
 import { 
@@ -38,7 +35,6 @@ const firebaseConfig = {
 const GOOGLE_CLIENT_ID = "314270688402-k6b4qg9u6b356h9ur6j5kqj4i4h3h8t7.apps.googleusercontent.com";
 const DRIVE_FOLDER_ID = "1gM3QYkQZ5xY5Z5Y5Z5Y5Z5Y5Z5Y5Z5Y5"; // Placeholder for the shared Google Drive folder ID
 
-// Fix: Call Firebase functions directly after named import.
 const app = !getApps().length ? initializeApp(firebaseConfig) : getApp();
 const auth = getAuth(app);
 const db = getFirestore(app);
@@ -313,985 +309,254 @@ const Sidebar: React.FC<{ projects: Project[]; selectedProjectId: string | null;
           <aside className={`fixed inset-y-0 left-0 z-40 flex flex-col w-64 bg-white border-r transform transition-transform lg:relative lg:translate-x-0 dark:bg-dark-secondary dark:border-gray-700 ${isOpen ? 'translate-x-0' : '-translate-x-full'}`}>
             <div className="flex items-center justify-between h-16 px-4 border-b flex-shrink-0 dark:border-gray-700"> <h1 className="text-xl font-bold text-primary">ProjectHub</h1> <motion.button whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }} onClick={onClose} className="p-2 text-gray-500 rounded-md lg:hidden hover:bg-gray-100 dark:hover:bg-gray-700"> <X size={24} /> </motion.button> </div>
             <div className="flex flex-col flex-grow p-4 overflow-y-auto">
-              <nav className="flex-1 space-y-2"> {navLinks.map((link) => ( <motion.div key={link.name} whileHover={{ x: 2 }}> <NavLink to={link.path} end onClick={onClose} className={({ isActive }) => `flex items-center px-4 py-2 text-sm font-medium rounded-lg ${isActive ? 'bg-gradient-to-r from-primary to-emerald-500 text-white shadow-sm' : 'text-gray-600 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700'}`}> {link.icon} <span className="ml-3">{link.name}</span> </NavLink> </motion.div> ))} </nav>
+              <nav className="flex-1 space-y-2"> {navLinks.map((link) => ( <motion.div key={link.name} whileHover={{ x: 2 }}> <NavLink to={link.path} end={link.path === '/'} onClick={onClose} className={({ isActive }) => `flex items-center px-4 py-2 text-sm font-medium rounded-lg ${isActive ? 'bg-gradient-to-r from-primary to-emerald-500 text-white shadow-sm' : 'text-gray-600 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700'}`}> {link.icon} <span className="ml-3">{link.name}</span> </NavLink> </motion.div> ))} </nav>
               <div className="mt-8">
                 <div className="flex items-center justify-between px-4"> <h2 className="text-xs font-semibold tracking-wider text-gray-500 uppercase dark:text-gray-400">{t('projects')}</h2> <motion.button whileHover={{ scale: 1.2 }} whileTap={{ scale: 0.9 }} onClick={onNewProject} className="p-1 text-gray-500 rounded-full hover:bg-gray-200 dark:hover:bg-gray-700"> <Plus size={16} /> </motion.button> </div>
-                <div className="mt-2 space-y-1"> {projects.map(project => ( <motion.div key={project.id} whileHover={{ x: 2 }} className="relative group"> <button onClick={() => { onSelectProject(project.id); onClose(); }} className={`w-full text-left flex items-center px-4 py-2 text-sm font-medium rounded-lg ${selectedProjectId === project.id ? 'bg-primary-light text-primary-dark font-semibold' : 'text-gray-600 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700'}`}> <span className="flex-1 truncate">{project.name}</span> </button> <div className="absolute right-0 top-0 h-full flex items-center pr-2 opacity-0 group-hover:opacity-100 transition-opacity"> <button onClick={(e) => {e.stopPropagation(); onEditProject(project);}} className="p-1 text-gray-500 hover:text-blue-600 dark:text-gray-400 dark:hover:text-blue-400"><Edit size={14} /></button> <button onClick={(e) => {e.stopPropagation(); onDeleteProject(project.id);}} className="p-1 text-gray-500 hover:text-red-600 dark:text-gray-400 dark:hover:text-red-400"><Trash2 size={14} /></button> </div> </motion.div> ))} </div>
+                <div className="mt-2 space-y-1">
+                  {projects.map(project => (
+                    <motion.div
+                      key={project.id}
+                      className={`flex group items-center justify-between p-2 text-sm rounded-lg cursor-pointer ${selectedProjectId === project.id ? 'bg-gray-200 dark:bg-gray-700' : 'hover:bg-gray-100 dark:hover:bg-gray-700'}`}
+                      onClick={() => onSelectProject(project.id)}
+                    >
+                        <span className="truncate">{project.name}</span>
+                        <div className="flex items-center space-x-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                            <motion.button whileTap={{scale:0.9}} onClick={(e) => { e.stopPropagation(); onEditProject(project); }} className="p-1 rounded hover:bg-gray-200 dark:hover:bg-gray-600"> <Edit size={14} /> </motion.button>
+                            <motion.button whileTap={{scale:0.9}} onClick={(e) => { e.stopPropagation(); onDeleteProject(project.id); }} className="p-1 rounded hover:bg-gray-200 dark:hover:bg-gray-600"> <Trash2 size={14} /> </motion.button>
+                        </div>
+                    </motion.div>
+                  ))}
+                </div>
               </div>
             </div>
           </aside>
         </>
     );
 };
-const ConfirmationModal: React.FC<{ isOpen: boolean; onClose: () => void; onConfirm: () => void; title: string; message: string; t: (key: string) => string; }> = ({ isOpen, onClose, onConfirm, title, message, t }) => (
-    <AnimatePresence>
-        {isOpen && (
-            <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
-              <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.9 }} className="w-full max-w-md p-6 bg-white rounded-xl shadow-xl dark:bg-dark-secondary">
-                <h2 className="text-lg font-semibold text-gray-900 dark:text-white">{title}</h2>
-                <p className="mt-2 text-sm text-gray-600 dark:text-gray-400">{message}</p>
-                <div className="flex justify-end mt-6 space-x-4">
-                  <motion.button onClick={onClose} whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }} className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600">{t('cancel')}</motion.button>
-                  <motion.button onClick={onConfirm} whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }} className="px-4 py-2 text-sm font-medium text-white bg-red-600 rounded-lg hover:bg-red-700">{t('confirm')}</motion.button>
-                </div>
-              </motion.div>
-            </div>
-        )}
-    </AnimatePresence>
+
+// --- START OF ADDED CODE TO FIX MISSING APP COMPONENT AND EXPORT ---
+
+// 9. PLACEHOLDER PAGE COMPONENTS
+const PlaceholderPage: React.FC<{ title: string; }> = ({ title }) => (
+    <div className="p-6 md:p-8">
+        <h1 className="text-2xl font-semibold text-gray-900 dark:text-white">{title}</h1>
+        <div className="mt-8">
+            <EmptyState title={`${title} Page`} message="Content for this page is under construction." />
+        </div>
+    </div>
 );
 
-// 9. CRUD MODAL COMPONENTS
-const inputStyle = "block w-full px-3 py-2 mt-1 bg-white border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-primary focus:border-primary sm:text-sm dark:bg-gray-700 dark:border-gray-600 dark:text-white";
-const btnPrimaryStyle = "px-4 py-2 text-sm font-medium text-white rounded-lg bg-gradient-to-r from-primary to-emerald-500 hover:from-primary-dark hover:to-emerald-dark transition-all shadow-sm";
-const btnSecondaryStyle = "px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600";
-const labelStyle = "block text-sm font-medium text-gray-700 dark:text-gray-300";
+const ProjectScope: React.FC<{t: (key: string) => string}> = ({ t }) => {
+    const location = useLocation();
+    const isProfilePage = location.pathname === '/profile';
 
-const NewProjectModal: React.FC<{ isOpen: boolean; onClose: () => void; onSave: (project: Omit<Project, 'id' | 'ownerId' | 'members'> | (Omit<Project, 'id' | 'ownerId' | 'members'> & {id: string})) => void; editingProject: Project | null; t: (key: string) => string; }> = ({ isOpen, onClose, onSave, editingProject, t }) => {
-    const [name, setName] = useState(''); const [description, setDescription] = useState(''); const [startDate, setStartDate] = useState(''); const [endDate, setEndDate] = useState('');
-    useEffect(() => {
-      if (editingProject) { setName(editingProject.name); setDescription(editingProject.description); setStartDate(new Date(editingProject.startDate).toISOString().split('T')[0]); setEndDate(new Date(editingProject.endDate).toISOString().split('T')[0]); }
-      else { setName(''); setDescription(''); setStartDate(''); setEndDate(''); }
-    }, [editingProject, isOpen]);
-    const handleSubmit = (e: React.FormEvent) => { e.preventDefault(); const projectData = { name, description, startDate, endDate }; onSave(editingProject ? { ...projectData, id: editingProject.id } : projectData); onClose(); };
-    return (
-      <AnimatePresence>
-        {isOpen && (<div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
-        <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.9 }} className="w-full max-w-lg p-6 bg-white rounded-xl shadow-xl dark:bg-dark-secondary">
-          <h2 className="text-lg font-semibold text-gray-900 dark:text-white">{editingProject ? t('editProject') : t('newProject')}</h2>
-          <form onSubmit={handleSubmit} className="mt-4 space-y-4">
-            <div><label htmlFor="name" className={labelStyle}>{t('projectName')}</label><input type="text" id="name" value={name} onChange={e => setName(e.target.value)} required className={inputStyle} /></div>
-            <div><label htmlFor="description" className={labelStyle}>{t('description')}</label><textarea id="description" value={description} onChange={e => setDescription(e.target.value)} rows={3} required className={inputStyle}></textarea></div>
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-              <div><label htmlFor="startDate" className={labelStyle}>{t('startDate')}</label><input type="date" id="startDate" value={startDate} onChange={e => setStartDate(e.target.value)} required className={inputStyle} /></div>
-              <div><label htmlFor="endDate" className={labelStyle}>{t('endDate')}</label><input type="date" id="endDate" value={endDate} onChange={e => setEndDate(e.target.value)} required className={inputStyle} /></div>
-            </div>
-            <div className="flex justify-end pt-4 space-x-4">
-              <motion.button type="button" onClick={onClose} whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }} className={btnSecondaryStyle}>{t('cancel')}</motion.button>
-              <motion.button type="submit" whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }} className={btnPrimaryStyle}>{editingProject ? t('updateProject') : t('createProject')}</motion.button>
-            </div>
-          </form>
-        </motion.div></div>)}
-      </AnimatePresence>
-    );
-};
-const TaskModal: React.FC<{ isOpen: boolean; onClose: () => void; onSave: (task: Omit<Task, 'id'> | Task) => void; editingTask: Task | null; team: TeamMember[]; tasks: Task[]; t: (key: string) => string; }> = ({ isOpen, onClose, onSave, editingTask, team, tasks, t }) => {
-    const [name, setName] = useState(''); const [description, setDescription] = useState(''); const [status, setStatus] = useState<Status>('To Do'); const [dueDate, setDueDate] = useState(''); const [assigneeId, setAssigneeId] = useState<string | undefined>(undefined); const [priority, setPriority] = useState<Priority>('Medium'); const [parentId, setParentId] = useState<string | undefined>(undefined);
-    const [progress, setProgress] = useState(0);
-    const [reminderDate, setReminderDate] = useState('');
+    if (isProfilePage) {
+        return <Outlet />;
+    }
 
-    useEffect(() => {
-        if (editingTask) { setName(editingTask.name); setDescription(editingTask.description); setStatus(editingTask.status); setDueDate(new Date(editingTask.dueDate).toISOString().split('T')[0]); setAssigneeId(editingTask.assigneeId); setPriority(editingTask.priority); setParentId(editingTask.parentId ?? undefined); setProgress(editingTask.progress || 0); setReminderDate(editingTask.reminderDate ? new Date(editingTask.reminderDate).toISOString().split('T')[0] : ''); }
-        else { setName(''); setDescription(''); setStatus('To Do'); setDueDate(''); setAssigneeId(undefined); setPriority('Medium'); setParentId(undefined); setProgress(0); setReminderDate(''); }
-    }, [editingTask, isOpen]);
-    const handleSubmit = (e: React.FormEvent) => { e.preventDefault(); const taskData = { name, description, status, dueDate, assigneeId, priority, parentId, progress, reminderDate }; onSave(editingTask ? { ...taskData, id: editingTask.id } : taskData); onClose(); };
-    return (
-      <AnimatePresence> {isOpen && (<div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
-        <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.9 }} className="w-full max-w-lg p-6 bg-white rounded-xl shadow-xl dark:bg-dark-secondary">
-          <h2 className="text-lg font-semibold">{editingTask ? t('editTask') : t('addTask')}</h2>
-          <form onSubmit={handleSubmit} className="mt-4 space-y-4">
-            <input type="text" placeholder={t('taskName')} value={name} onChange={e => setName(e.target.value)} required className={inputStyle}/>
-            <textarea placeholder={t('description')} value={description} onChange={e => setDescription(e.target.value)} required className={inputStyle}></textarea>
-            <div className="grid grid-cols-2 gap-4">
-                <select value={status} onChange={e => setStatus(e.target.value as Status)} className={inputStyle}> <option value="To Do">{t('toDo')}</option><option value="In Progress">{t('inProgress')}</option><option value="Done">{t('done')}</option><option value="Archived">{t('archived')}</option> </select>
-                <select value={assigneeId || ''} onChange={e => setAssigneeId(e.target.value)} className={inputStyle}> <option value="">{t('assignee')}</option> {team.map(member => <option key={member.id} value={member.id}>{member.name}</option>)} </select>
-                <select value={priority} onChange={e => setPriority(e.target.value as Priority)} className={inputStyle}> <option value="Low">{t('low')}</option><option value="Medium">{t('medium')}</option><option value="High">{t('high')}</option><option value="Urgent">{t('urgent')}</option> </select>
-                <select value={parentId || ''} onChange={e => setParentId(e.target.value)} className={inputStyle}> <option value="">{t('parentTask')}</option> {tasks.filter(t => t.id !== editingTask?.id).map(task => <option key={task.id} value={task.id}>{task.name}</option>)} </select>
-            </div>
-            <div className="grid grid-cols-2 gap-4">
-                <div><label className={labelStyle}>{t('dueDate')}</label><input type="date" value={dueDate} onChange={e => setDueDate(e.target.value)} required className={inputStyle}/></div>
-                <div><label className={labelStyle}>{t('reminderDate')}</label><input type="date" value={reminderDate} onChange={e => setReminderDate(e.target.value)} className={inputStyle}/></div>
-            </div>
-            <div>
-              <label className={`${labelStyle} mb-1`}>{t('progress')}: {progress}%</label>
-              <input type="range" min="0" max="100" value={progress} onChange={e => setProgress(Number(e.target.value))} className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer dark:bg-gray-700" />
-            </div>
-            <div className="flex justify-end pt-2 space-x-2"> <button type="button" onClick={onClose} className={btnSecondaryStyle}>{t('cancel')}</button> <button type="submit" className={btnPrimaryStyle}>{t('save')}</button> </div>
-          </form>
-        </motion.div></div>)} </AnimatePresence>
-    );
-};
-// Other modals (TeamMember, Budget, Risk, Design) would be similarly wrapped in <AnimatePresence> and styled with new classes
-const TeamMemberModal: React.FC<{ isOpen: boolean; onClose: () => void; onSave: (member: Omit<TeamMember, 'id'> | TeamMember) => void; editingMember: TeamMember | null; t: (key: string) => string; }> = ({ isOpen, onClose, onSave, editingMember, t }) => {
-    const [name, setName] = useState(''); const [role, setRole] = useState(''); const [email, setEmail] = useState(''); const [avatar] = useState(''); // Avatar logic can be extended
-    useEffect(() => { if (editingMember) { setName(editingMember.name); setRole(editingMember.role); setEmail(editingMember.email); } else { setName(''); setRole(''); setEmail(''); } }, [editingMember, isOpen]);
-    const handleSubmit = (e: React.FormEvent) => { e.preventDefault(); const memberData = { name, role, email, avatar }; onSave(editingMember ? { ...memberData, id: editingMember.id } : memberData); onClose(); };
-    return (<AnimatePresence>{isOpen && (<div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50"> <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.9 }} className="w-full max-w-lg p-6 bg-white rounded-lg shadow-xl dark:bg-dark-secondary"> <h2 className="text-lg font-semibold">{editingMember ? t('editTeamMember') : t('addTeamMember')}</h2> <form onSubmit={handleSubmit} className="mt-4 space-y-4"> <input type="text" placeholder={t('memberName')} value={name} onChange={e => setName(e.target.value)} required className={inputStyle}/> <input type="text" placeholder={t('role')} value={role} onChange={e => setRole(e.target.value)} required className={inputStyle}/> <input type="email" placeholder={t('email')} value={email} onChange={e => setEmail(e.target.value)} required className={inputStyle}/> <div className="flex justify-end pt-2 space-x-2"> <button type="button" onClick={onClose} className={btnSecondaryStyle}>{t('cancel')}</button> <button type="submit" className={btnPrimaryStyle}>{t('save')}</button> </div> </form> </motion.div> </div>)}</AnimatePresence>);
-};
-const BudgetItemModal: React.FC<{ isOpen: boolean; onClose: () => void; onSave: (item: Omit<BudgetItem, 'id'> | BudgetItem) => void; editingItem: BudgetItem | null; t: (key: string) => string; }> = ({ isOpen, onClose, onSave, editingItem, t }) => {
-    const [category, setCategory] = useState(''); const [allocated, setAllocated] = useState(0); const [spent, setSpent] = useState(0);
-    useEffect(() => { if (editingItem) { setCategory(editingItem.category); setAllocated(editingItem.allocated); setSpent(editingItem.spent); } else { setCategory(''); setAllocated(0); setSpent(0); } }, [editingItem, isOpen]);
-    const handleSubmit = (e: React.FormEvent) => { e.preventDefault(); const itemData = { category, allocated: Number(allocated), spent: Number(spent) }; onSave(editingItem ? { ...itemData, id: editingItem.id } : itemData); onClose(); };
-    return (<AnimatePresence>{isOpen && (<div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50"> <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.9 }} className="w-full max-w-lg p-6 bg-white rounded-lg shadow-xl dark:bg-dark-secondary"> <h2 className="text-lg font-semibold">{editingItem ? t('editBudgetItem') : t('addBudgetItem')}</h2> <form onSubmit={handleSubmit} className="mt-4 space-y-4"> <input type="text" placeholder={t('category')} value={category} onChange={e => setCategory(e.target.value)} required className={inputStyle}/> <input type="number" placeholder={t('allocatedBudget')} value={allocated} onChange={e => setAllocated(Number(e.target.value))} required className={inputStyle}/> <input type="number" placeholder={t('spentBudget')} value={spent} onChange={e => setSpent(Number(e.target.value))} required className={inputStyle}/> <div className="flex justify-end pt-2 space-x-2"> <button type="button" onClick={onClose} className={btnSecondaryStyle}>{t('cancel')}</button> <button type="submit" className={btnPrimaryStyle}>{t('save')}</button> </div> </form> </motion.div> </div>)}</AnimatePresence>);
-};
-const RiskModal: React.FC<{ isOpen: boolean; onClose: () => void; onSave: (risk: Omit<Risk, 'id'> | Risk) => void; editingRisk: Risk | null; t: (key: string) => string; }> = ({ isOpen, onClose, onSave, editingRisk, t }) => {
-    const [description, setDescription] = useState(''); const [likelihood, setLikelihood] = useState<'Low' | 'Medium' | 'High'>('Medium'); const [impact, setImpact] = useState<'Low' | 'Medium' | 'High'>('Medium'); const [mitigation, setMitigation] = useState('');
-    useEffect(() => { if (editingRisk) { setDescription(editingRisk.description); setLikelihood(editingRisk.likelihood); setImpact(editingRisk.impact); setMitigation(editingRisk.mitigation); } else { setDescription(''); setLikelihood('Medium'); setImpact('Medium'); setMitigation(''); } }, [editingRisk, isOpen]);
-    const handleSubmit = (e: React.FormEvent) => { e.preventDefault(); const riskData = { description, likelihood, impact, mitigation }; onSave(editingRisk ? { ...riskData, id: editingRisk.id } : riskData); onClose(); };
-    // Fix: Corrected typo in AnimatePresence closing tag from </AnPresence> to </AnimatePresence>.
-    return (<AnimatePresence>{isOpen && (<div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50"> <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.9 }} className="w-full max-w-lg p-6 bg-white rounded-lg shadow-xl dark:bg-dark-secondary"> <h2 className="text-lg font-semibold">{editingRisk ? t('editRisk') : t('addRisk')}</h2> <form onSubmit={handleSubmit} className="mt-4 space-y-4"> <textarea placeholder={t('description')} value={description} onChange={e => setDescription(e.target.value)} required className={inputStyle}></textarea> <select value={likelihood} onChange={e => setLikelihood(e.target.value as any)} className={inputStyle}><option value="Low">{t('low')}</option><option value="Medium">{t('medium')}</option><option value="High">{t('high')}</option></select> <select value={impact} onChange={e => setImpact(e.target.value as any)} className={inputStyle}><option value="Low">{t('low')}</option><option value="Medium">{t('medium')}</option><option value="High">{t('high')}</option></select> <textarea placeholder={t('mitigation')} value={mitigation} onChange={e => setMitigation(e.target.value)} required className={inputStyle}></textarea> <div className="flex justify-end pt-2 space-x-2"> <button type="button" onClick={onClose} className={btnSecondaryStyle}>{t('cancel')}</button> <button type="submit" className={btnPrimaryStyle}>{t('save')}</button> </div> </form> </motion.div> </div>)}</AnimatePresence>);
-};
-const DesignModal: React.FC<{ isOpen: boolean; onClose: () => void; onSave: (design: Pick<Design, 'id'|'name'>) => void; editingDesign: Design | null; t: (key: string) => string; }> = ({ isOpen, onClose, onSave, editingDesign, t }) => {
-    const [name, setName] = useState('');
-    useEffect(() => { if (editingDesign) setName(editingDesign.name); else setName(''); }, [editingDesign, isOpen]);
-    const handleSubmit = (e: React.FormEvent) => { e.preventDefault(); if (editingDesign) { onSave({ id: editingDesign.id, name }); } onClose(); };
-    return (<AnimatePresence>{isOpen && (<div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50"> <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.9 }} className="w-full max-w-lg p-6 bg-white rounded-lg shadow-xl dark:bg-dark-secondary"> <h2 className="text-lg font-semibold">{t('editDesign')}</h2> <form onSubmit={handleSubmit} className="mt-4 space-y-4"> <input type="text" placeholder={t('designName')} value={name} onChange={e => setName(e.target.value)} required className={inputStyle}/> <div className="flex justify-end pt-2 space-x-2"> <button type="button" onClick={onClose} className={btnSecondaryStyle}>{t('cancel')}</button> <button type="submit" className={btnPrimaryStyle}>{t('save')}</button> </div> </form> </motion.div> </div>)}</AnimatePresence>);
-};
-const DashboardLayout: React.FC<{ children: React.ReactNode; user: User; projects: Project[]; selectedProjectId: string | null; onSelectProject: (id: string) => void; onNewProject: () => void; onEditProject: (project: Project) => void; onDeleteProject: (id: string) => void; onSignOut: () => void; theme: 'light' | 'dark'; toggleTheme: () => void; locale: Locale; toggleLocale: () => void; t: (key: string) => string; }> = (props) => {
-    const [isSidebarOpen, setSidebarOpen] = useState(false);
-    return (
-        <div className="flex h-screen overflow-hidden bg-main">
-          <Sidebar {...props} isOpen={isSidebarOpen} onClose={() => setSidebarOpen(false)} />
-          <div className="flex flex-col flex-1 w-0 overflow-hidden">
-            <Header {...props} onMenuClick={() => setSidebarOpen(true)} />
-            {props.children}
-          </div>
-        </div>
-    );
-};
+    const { currentProject } = useProjectContext();
 
-// 10. PAGE COMPONENTS
-const DashboardPage: React.FC<{ project: Project | null; tasks: Task[]; team: TeamMember[]; budget: BudgetItem[]; risks: Risk[]; t: (key: string) => string; locale: Locale; theme: 'light' | 'dark' }> = ({ project, tasks, team, budget, risks, t, locale, theme }) => {
-    if (!project) return <main className="flex-1 p-6 overflow-y-auto"><EmptyState title={t('noProjectSelected')} message={t('noProjectMessage')} /></main>;
-    
-    const isDarkMode = theme === 'dark';
-    const textColor = isDarkMode ? '#E5E7EB' : '#374151'; // gray-200 and gray-700
-    const gridColor = isDarkMode ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.1)';
-
-    const barChartOptions = {
-        responsive: true,
-        plugins: {
-            legend: { labels: { color: textColor } },
-            title: { display: false }
-        },
-        scales: {
-            x: { ticks: { color: textColor }, grid: { color: gridColor } },
-            y: { ticks: { color: textColor }, grid: { color: gridColor } }
-        }
-    };
-
-    const pieChartOptions = {
-        responsive: true,
-        plugins: {
-            legend: { labels: { color: textColor } }
-        }
-    };
-
-    const tasksByStatus = tasks.reduce((acc, task) => { acc[task.status] = (acc[task.status] || 0) + 1; return acc; }, {} as Record<string, number>);
-    const budgetOverview = { allocated: budget.reduce((sum, item) => sum + item.allocated, 0), spent: budget.reduce((sum, item) => sum + item.spent, 0) };
-    const totalProgress = tasks.reduce((sum, task) => sum + (task.progress || 0), 0);
-    const avgProgress = tasks.length > 0 ? (totalProgress / tasks.length).toFixed(0) : 0;
-    
-    const cardData = [
-        { title: t('totalTasks'), value: tasks.length.toString(), icon: <CheckSquare size={24} />, color: '#3B82F6' },
-        { title: t('teamMembers'), value: team.length.toString(), icon: <Users size={24} />, color: '#10B981' },
-        { title: t('openRisks'), value: risks.length.toString(), icon: <AlertTriangle size={24} />, color: '#F59E0B' },
-        { title: t('avgProjectProgress'), value: `${avgProgress}%`, icon: <div className="font-bold text-lg">{avgProgress}%</div>, color: '#6366F1' },
-    ];
-    const taskStatusData = { labels: Object.keys(tasksByStatus), datasets: [{ data: Object.values(tasksByStatus), backgroundColor: ['#9CA3AF', '#3B82F6', '#10B981', '#F59E0B'] }] };
-    const budgetData = { labels: [t('spent'), t('remaining')], datasets: [{ data: [budgetOverview.spent, budgetOverview.allocated - budgetOverview.spent], backgroundColor: ['#EF4444', '#10B981'] }] };
-    return (
-        <main className="flex-1 p-6 overflow-y-auto">
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">{t('dashboardTitle').replace('{projectName}', project.name)}</h1>
-          <p className="mt-1 text-sm text-gray-600 dark:text-gray-400">{project.description}</p>
-          <div className="grid grid-cols-1 gap-6 mt-6 sm:grid-cols-2 lg:grid-cols-4"> {cardData.map(card => <Card key={card.title} {...card} />)} </div>
-          <div className="grid grid-cols-1 gap-6 mt-8 lg:grid-cols-2">
-            <div className="p-4 bg-white rounded-xl shadow-md dark:bg-dark-secondary"><h2 className="text-lg font-semibold text-gray-900 dark:text-white">{t('taskStatus')}</h2><Bar data={taskStatusData} options={barChartOptions} /></div>
-            <div className="p-4 bg-white rounded-xl shadow-md dark:bg-dark-secondary"><h2 className="text-lg font-semibold text-gray-900 dark:text-white">{t('budgetOverview')}</h2><Pie data={budgetData} options={pieChartOptions} /></div>
-          </div>
-        </main>
-    );
-};
-const TasksPage: React.FC<{ project: Project | null; tasks: Task[]; team: TeamMember[]; onNew: () => void; onEdit: (task: Task) => void; onDelete: (id: string) => void; t: (key: string) => string; locale: Locale; }> = ({ project, tasks, team, onNew, onEdit, onDelete, t, locale }) => {
-    // State for filters and sorting
-    const [assigneeFilter, setAssigneeFilter] = useState('');
-    const [statusFilter, setStatusFilter] = useState('');
-    const [sortBy, setSortBy] = useState('priorityDesc');
-
-    const filteredAndSortedTasks = useMemo(() => {
-        let filtered = tasks;
-        if (assigneeFilter) {
-            filtered = filtered.filter(task => task.assigneeId === assigneeFilter);
-        }
-        if (statusFilter) {
-            filtered = filtered.filter(task => task.status === statusFilter);
-        }
-
-        const priorityOrder: Record<Priority, number> = { 'Urgent': 4, 'High': 3, 'Medium': 2, 'Low': 1 };
-        return [...filtered].sort((a, b) => {
-            switch (sortBy) {
-                case 'priorityDesc': return priorityOrder[b.priority] - priorityOrder[a.priority];
-                case 'priorityAsc': return priorityOrder[a.priority] - priorityOrder[b.priority];
-                case 'dueDate': return new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime();
-                default: return 0;
-            }
-        });
-    }, [tasks, assigneeFilter, statusFilter, sortBy]);
-    
-    const taskTree = useMemo(() => {
-        // Fix: Use `any[]` for children to handle recursive type, and cast `children: []` to `any[]` to allow pushing items.
-        const tree: (Task & { children: any[] })[] = [];
-        const taskMap = new Map(filteredAndSortedTasks.map(task => [task.id, { ...task, children: [] as any[] }]));
-        taskMap.forEach(task => {
-            if (task.parentId && taskMap.has(task.parentId)) {
-                taskMap.get(task.parentId)?.children.push(task);
-            } else {
-                tree.push(task);
-            }
-        });
-        return tree;
-    }, [filteredAndSortedTasks]);
-
-    // Fix: Changed `children: Task[]` to `children: any[]` to correctly type the recursive task structure.
-    const renderTask = (task: Task & { children: any[] }, level = 0) => (
-        <motion.div key={task.id} layout initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} transition={{ duration: 0.3 }} style={{ marginLeft: `${level * 2}rem` }}>
-            <div className="p-4 bg-white rounded-lg shadow dark:bg-dark-secondary">
-                <div className="flex items-start justify-between">
-                    <div>
-                        <h3 className="font-semibold text-gray-900 dark:text-white">{task.name}</h3>
-                        <p className="mt-2 text-sm text-gray-600 dark:text-gray-400">{task.description}</p>
-                        <div className="flex items-center mt-2 space-x-4">
-                            <span className={`px-2 py-0.5 text-xs font-semibold rounded-full ${getPriorityStyles(task.priority).color} ${getPriorityStyles(task.priority).text}`}>{t(task.priority.toLowerCase())}</span>
-                            <p className="flex items-center text-xs text-gray-500 dark:text-gray-500">{t('dueDate')}: {formatDate(task.dueDate, locale)} {task.reminderDate && <Bell size={12} className="ml-1 text-yellow-500" />}</p>
-                            {task.parentId && <span className="flex items-center text-xs text-gray-500"><Link2 size={12} className="mr-1"/> {t('parent')}</span>}
-                        </div>
-                    </div>
-                    <div className="flex flex-col items-end flex-shrink-0 ml-4">
-                        <span className={`px-2 py-1 text-xs font-semibold text-white rounded-full ${getStatusColor(task.status)}`}>{task.status}</span>
-                        <div className="flex mt-4 space-x-2">
-                            <button onClick={() => onEdit(task)} className="p-1 text-gray-500 hover:text-blue-600"><Edit size={16}/></button>
-                            <button onClick={() => onDelete(task.id)} className="p-1 text-gray-500 hover:text-red-600"><Trash2 size={16}/></button>
-                        </div>
-                    </div>
-                </div>
-                { (task.progress !== undefined && task.progress > 0) &&
-                  <div className="mt-3">
-                    <div className="flex justify-between mb-1">
-                        <span className="text-xs font-medium text-primary dark:text-white">{t('progress')}</span>
-                        <span className="text-xs font-medium text-primary dark:text-white">{task.progress}%</span>
-                    </div>
-                    <div className="w-full bg-gray-200 rounded-full h-1.5 dark:bg-gray-700">
-                        <div className="bg-primary h-1.5 rounded-full" style={{width: `${task.progress}%`}}></div>
-                    </div>
-                  </div>
-                }
-            </div>
-            {task.children.length > 0 && <div className="mt-2 space-y-2 border-l-2 border-primary-light pl-2">{task.children.map(child => renderTask(child, level + 1))}</div>}
-        </motion.div>
-    );
-
-    if (!project) return <main className="flex-1 p-6 overflow-y-auto"><EmptyState title={t('noProjectSelected')} message={t('noProjectMessage')} /></main>;
-    return (
-        <main className="flex-1 p-6 overflow-y-auto">
-            <div className="flex items-center justify-between">
-                <h1 className="text-2xl font-bold text-gray-900 dark:text-white">{t('tasksTitle').replace('{projectName}', project.name)}</h1>
-                <button onClick={onNew} className={`${btnPrimaryStyle} flex items-center`}><Plus size={16} className="mr-2"/>{t('addTask')}</button>
-            </div>
-            {/* Filter and Sort Controls */}
-            <div className="grid grid-cols-1 gap-4 my-4 sm:grid-cols-3">
-                <select value={assigneeFilter} onChange={e => setAssigneeFilter(e.target.value)} className={inputStyle}> <option value="">{t('filterByAssignee')}</option> {team.map(m => <option key={m.id} value={m.id}>{m.name}</option>)} </select>
-                <select value={statusFilter} onChange={e => setStatusFilter(e.target.value)} className={inputStyle}> <option value="">{t('filterByStatus')}</option> <option value="To Do">{t('toDo')}</option><option value="In Progress">{t('inProgress')}</option><option value="Done">{t('done')}</option><option value="Archived">{t('archived')}</option> </select>
-                <select value={sortBy} onChange={e => setSortBy(e.target.value)} className={inputStyle}> <option value="priorityDesc">{t('priorityDesc')}</option><option value="priorityAsc">{t('priorityAsc')}</option><option value="dueDate">{t('dueDateSort')}</option> </select>
-            </div>
-            {tasks.length === 0 ? <EmptyState title={t('noTasks')} message={t('noTasksMessage')} action={<button onClick={onNew} className={btnPrimaryStyle}>{t('addTask')}</button>} /> : (
-                <div className="mt-6 space-y-4">
-                  <AnimatePresence>
-                    {taskTree.map(task => renderTask(task))}
-                  </AnimatePresence>
-                </div>
-            )}
-        </main>
-    );
-};
-const TeamPage: React.FC<{ project: Project | null; team: TeamMember[]; onNew: () => void; onEdit: (member: TeamMember) => void; onDelete: (id: string) => void; t: (key: string) => string; }> = ({ project, team, onNew, onEdit, onDelete, t }) => {
-    if (!project) return <main className="flex-1 p-6 overflow-y-auto"><EmptyState title={t('noProjectSelected')} message={t('noProjectMessage')} /></main>;
-    return (
-        <main className="flex-1 p-6 overflow-y-auto">
-            <div className="flex items-center justify-between"> <h1 className="text-2xl font-bold text-gray-900 dark:text-white">{t('teamTitle').replace('{projectName}', project.name)}</h1> <button onClick={onNew} className={`${btnPrimaryStyle} flex items-center`}><Plus size={16} className="mr-2"/>{t('addTeamMember')}</button> </div>
-            {team.length === 0 ? <EmptyState title={t('noTeam')} message={t('noTeamMessage')} action={<button onClick={onNew} className={btnPrimaryStyle}>{t('addTeamMember')}</button>} /> : (
-                <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="mt-6 overflow-x-auto bg-white rounded-lg shadow dark:bg-dark-secondary">
-                <table className="w-full text-sm text-left text-gray-500 dark:text-gray-400">
-                    <thead className="text-xs text-gray-700 uppercase bg-gray-50 dark:bg-gray-700 dark:text-gray-400"><tr><th scope="col" className="px-6 py-3">{t('memberName')}</th><th scope="col" className="px-6 py-3">{t('role')}</th><th scope="col" className="px-6 py-3">{t('email')}</th><th scope="col" className="px-6 py-3"></th></tr></thead>
-                    <motion.tbody>{team.map((member, i) => (<motion.tr initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.05 }} key={member.id} className="bg-white border-b dark:bg-dark-secondary dark:border-gray-700"><th scope="row" className="px-6 py-4 font-medium text-gray-900 whitespace-nowrap dark:text-white">{member.name}</th><td className="px-6 py-4">{member.role}</td><td className="px-6 py-4">{member.email}</td><td className="flex justify-end px-6 py-4 space-x-2"><button onClick={() => onEdit(member)} className="p-1 text-gray-500 hover:text-blue-600"><Edit size={16}/></button><button onClick={() => onDelete(member.id)} className="p-1 text-gray-500 hover:text-red-600"><Trash2 size={16}/></button></td></motion.tr>))}</motion.tbody>
-                </table>
-                </motion.div>
-            )}
-        </main>
-    );
-};
-
-const BudgetPage: React.FC<{ project: Project | null; budget: BudgetItem[]; onNew: () => void; onEdit: (item: BudgetItem) => void; onDelete: (id: string) => void; t: (key: string) => string; locale: Locale; }> = ({ project, budget, onNew, onEdit, onDelete, t, locale }) => {
-    if (!project) return <main className="flex-1 p-6 overflow-y-auto"><EmptyState title={t('noProjectSelected')} message={t('noProjectMessage')} /></main>;
-    const totalAllocated = budget.reduce((sum, item) => sum + item.allocated, 0);
-    const totalSpent = budget.reduce((sum, item) => sum + item.spent, 0);
-    return (
-        <main className="flex-1 p-6 overflow-y-auto">
-            <div className="flex items-center justify-between"> <h1 className="text-2xl font-bold text-gray-900 dark:text-white">{t('budgetTitle').replace('{projectName}', project.name)}</h1> <button onClick={onNew} className={`${btnPrimaryStyle} flex items-center`}><Plus size={16} className="mr-2"/>{t('addBudgetItem')}</button> </div>
-            {budget.length === 0 ? <EmptyState title={t('noBudget')} message={t('noBudgetMessage')} action={<button onClick={onNew} className={btnPrimaryStyle}>{t('addBudgetItem')}</button>} /> : (
-                <>
-                <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="grid grid-cols-1 gap-4 mt-6 sm:grid-cols-3">
-                    <div className="p-4 bg-white rounded-lg shadow dark:bg-dark-secondary"><p className="text-sm text-gray-500">{t('total')} {t('allocated')}</p><p className="text-2xl font-semibold">{formatCurrencyEGP(totalAllocated, locale)}</p></div>
-                    <div className="p-4 bg-white rounded-lg shadow dark:bg-dark-secondary"><p className="text-sm text-gray-500">{t('total')} {t('spent')}</p><p className="text-2xl font-semibold text-red-500">{formatCurrencyEGP(totalSpent, locale)}</p></div>
-                    <div className="p-4 bg-white rounded-lg shadow dark:bg-dark-secondary"><p className="text-sm text-gray-500">{t('remaining')}</p><p className="text-2xl font-semibold text-emerald-500">{formatCurrencyEGP(totalAllocated - totalSpent, locale)}</p></div>
-                </motion.div>
-                <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="mt-6 overflow-x-auto bg-white rounded-lg shadow dark:bg-dark-secondary">
-                <table className="w-full text-sm text-left text-gray-500 dark:text-gray-400">
-                    <thead className="text-xs text-gray-700 uppercase bg-gray-50 dark:bg-gray-700 dark:text-gray-400"><tr><th scope="col" className="px-6 py-3">{t('category')}</th><th scope="col" className="px-6 py-3">{t('allocatedBudget')}</th><th scope="col" className="px-6 py-3">{t('spentBudget')}</th><th scope="col" className="px-6 py-3">{t('remaining')}</th><th scope="col" className="px-6 py-3"></th></tr></thead>
-                    <motion.tbody>{budget.map((item, i) => (<motion.tr initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.05 }} key={item.id} className="bg-white border-b dark:bg-dark-secondary dark:border-gray-700"><th scope="row" className="px-6 py-4 font-medium text-gray-900 whitespace-nowrap dark:text-white">{item.category}</th><td className="px-6 py-4">{formatCurrencyEGP(item.allocated, locale)}</td><td className="px-6 py-4">{formatCurrencyEGP(item.spent, locale)}</td><td className="px-6 py-4">{formatCurrencyEGP(item.allocated - item.spent, locale)}</td><td className="flex justify-end px-6 py-4 space-x-2"><button onClick={() => onEdit(item)} className="p-1 text-gray-500 hover:text-blue-600"><Edit size={16}/></button><button onClick={() => onDelete(item.id)} className="p-1 text-gray-500 hover:text-red-600"><Trash2 size={16}/></button></td></motion.tr>))}</motion.tbody>
-                </table>
-                </motion.div>
-                </>
-            )}
-        </main>
-    );
-};
-
-const RisksPage: React.FC<{ project: Project | null; risks: Risk[]; onNew: () => void; onEdit: (risk: Risk) => void; onDelete: (id: string) => void; t: (key: string) => string; }> = ({ project, risks, onNew, onEdit, onDelete, t }) => {
-    if (!project) return <main className="flex-1 p-6 overflow-y-auto"><EmptyState title={t('noProjectSelected')} message={t('noProjectMessage')} /></main>;
-    return (
-        <main className="flex-1 p-6 overflow-y-auto">
-            <div className="flex items-center justify-between"> <h1 className="text-2xl font-bold text-gray-900 dark:text-white">{t('risksTitle').replace('{projectName}', project.name)}</h1> <button onClick={onNew} className={`${btnPrimaryStyle} flex items-center`}><Plus size={16} className="mr-2"/>{t('addRisk')}</button> </div>
-            {risks.length === 0 ? <EmptyState title={t('noRisks')} message={t('noRisksMessage')} action={<button onClick={onNew} className={btnPrimaryStyle}>{t('addRisk')}</button>} /> : (
-                <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="mt-6 overflow-x-auto bg-white rounded-lg shadow dark:bg-dark-secondary">
-                <table className="w-full text-sm text-left text-gray-500 dark:text-gray-400">
-                    <thead className="text-xs text-gray-700 uppercase bg-gray-50 dark:bg-gray-700 dark:text-gray-400"><tr><th scope="col" className="px-6 py-3">{t('description')}</th><th scope="col" className="px-6 py-3">{t('likelihood')}</th><th scope="col" className="px-6 py-3">{t('impact')}</th><th scope="col" className="px-6 py-3">{t('mitigation')}</th><th scope="col" className="px-6 py-3"></th></tr></thead>
-                    <motion.tbody>{risks.map((risk, i) => (<motion.tr initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.05 }} key={risk.id} className="bg-white border-b dark:bg-dark-secondary dark:border-gray-700"><th scope="row" className="px-6 py-4 font-medium text-gray-900 whitespace-nowrap dark:text-white">{risk.description}</th><td className="px-6 py-4">{risk.likelihood}</td><td className="px-6 py-4">{risk.impact}</td><td className="px-6 py-4">{risk.mitigation}</td><td className="flex justify-end px-6 py-4 space-x-2"><button onClick={() => onEdit(risk)} className="p-1 text-gray-500 hover:text-blue-600"><Edit size={16}/></button><button onClick={() => onDelete(risk.id)} className="p-1 text-gray-500 hover:text-red-600"><Trash2 size={16}/></button></td></motion.tr>))}</motion.tbody>
-                </table>
-                </motion.div>
-            )}
-        </main>
-    );
-};
-
-const DriveImage: React.FC<{ webContentLink: string; token: string; alt: string; }> = ({ webContentLink, token, alt }) => {
-    const [imageUrl, setImageUrl] = useState<string | null>(null);
-    const [loading, setLoading] = useState(true);
-
-    useEffect(() => {
-        let isMounted = true;
-        const fetchImage = async () => {
-            if (!webContentLink || !token) return;
-            setLoading(true);
-            try {
-                const response = await fetch(webContentLink, {
-                    headers: { 'Authorization': `Bearer ${token}` }
-                });
-                if (!response.ok) throw new Error('Failed to fetch image');
-                const blob = await response.blob();
-                if (isMounted) {
-                    setImageUrl(URL.createObjectURL(blob));
-                }
-            } catch (error) {
-                console.error("Error fetching Drive image:", error);
-                if (isMounted) setImageUrl(null);
-            } finally {
-                if (isMounted) setLoading(false);
-            }
-        };
-
-        fetchImage();
-
-        return () => {
-            isMounted = false;
-            if (imageUrl) {
-                URL.revokeObjectURL(imageUrl);
-            }
-        };
-    }, [webContentLink, token]);
-
-    if (loading) return <div className="flex items-center justify-center w-full h-48 bg-gray-200 dark:bg-gray-700"><BouncingLoader /></div>;
-    if (!imageUrl) return <div className="flex items-center justify-center w-full h-48 bg-gray-200 dark:bg-gray-700"><Image size={48} className="text-gray-400"/></div>;
-
-    return <img src={imageUrl} alt={alt} className="object-cover w-full h-48" />;
-};
-
-const DesignsPage: React.FC<{ project: Project | null; designs: Design[]; onEdit: (design: Design) => void; onDelete: (design: Design) => void; onUpload: (file: File) => void; t: (key: string) => string; locale: Locale; token: string | null; login: () => void; }> = ({ project, designs, onEdit, onDelete, onUpload, t, locale, token, login }) => {
-    const [file, setFile] = useState<File | null>(null);
-    const [uploading, setUploading] = useState(false);
-    const { addToast } = useToast();
-
-    const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        if (e.target.files && e.target.files[0]) {
-            if (e.target.files[0].type === 'image/png') {
-                setFile(e.target.files[0]);
-            } else {
-                addToast(t('pngOnlyError'), 'error');
-            }
-        }
-    };
-
-    const handleUpload = async () => {
-        if (!file) return;
-        setUploading(true);
-        try {
-            await onUpload(file);
-            addToast(t('uploadSuccess'), 'success');
-            setFile(null);
-        } catch (error) {
-            addToast(t('uploadError'), 'error');
-        } finally {
-            setUploading(false);
-        }
-    };
-    
-    if (!project) return <main className="flex-1 p-6 overflow-y-auto"><EmptyState title={t('noProjectSelected')} message={t('noProjectMessage')} /></main>;
-    
-    if (!token) {
+    if (!currentProject) {
         return (
-            <main className="flex-1 p-6 overflow-y-auto flex items-center justify-center">
-                <div className="text-center">
-                    <p className="mb-4 text-gray-700 dark:text-gray-300">{t('googleDriveConnectMessage')}</p>
-                    <button onClick={() => login()} className={btnPrimaryStyle}>{t('connectToGoogleDrive')}</button>
-                </div>
-            </main>
+            <div className="flex items-center justify-center h-full">
+                <EmptyState title={t('noProjectSelected')} message={t('noProjectMessage')} />
+            </div>
         );
     }
-    
-    return (
-        <main className="flex-1 p-6 overflow-y-auto">
-            <h1 className="text-2xl font-bold text-gray-900 dark:text-white">{t('designsTitle').replace('{projectName}', project.name)}</h1>
-            <p className="mt-1 text-sm text-gray-600 dark:text-gray-400">{t('designsMessage')}</p>
-            <div className="p-4 mt-6 bg-white rounded-lg shadow dark:bg-dark-secondary">
-                <h2 className="text-lg font-semibold">{t('uploadDesign')}</h2>
-                <div className="flex items-center mt-4 space-x-4">
-                    <label className="flex items-center px-4 py-2 space-x-2 border border-gray-300 rounded-lg cursor-pointer hover:bg-gray-50 dark:border-gray-600 dark:hover:bg-gray-700">
-                        <UploadCloud size={16} />
-                        <span>{file ? file.name : t('pngFile')}</span>
-                        <input type="file" className="hidden" onChange={handleFileChange} accept="image/png" />
-                    </label>
-                    <button onClick={handleUpload} disabled={!file || uploading} className={`${btnPrimaryStyle} disabled:opacity-50`}>
-                        {uploading ? t('uploading') : t('upload')}
-                    </button>
-                </div>
-            </div>
-
-            {designs.length === 0 ? <div className="mt-8"><EmptyState title={t('noDesigns')} message={t('noDesignsMessage')} /></div> : (
-                <div className="grid grid-cols-1 gap-6 mt-8 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
-                    <AnimatePresence>
-                    {designs.map((design, i) => (
-                        <motion.div initial={{ opacity: 0, scale: 0.8 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.8 }} transition={{ delay: i * 0.05 }} key={design.id} className="relative overflow-hidden bg-white rounded-lg shadow group dark:bg-dark-secondary">
-                            <DriveImage webContentLink={design.webContentLink} token={token} alt={design.name} />
-                            <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-50 transition-all"></div>
-                            <div className="absolute bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-black/70 to-transparent">
-                                <a href={design.webViewLink} target="_blank" rel="noopener noreferrer" className="font-semibold text-white truncate hover:underline">{design.name}</a>
-                                <p className="text-xs text-gray-300">{t('uploaded')}: {formatDateTime(design.uploadedAt, locale)}</p>
-                            </div>
-                            <div className="absolute top-2 right-2 flex space-x-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                                <button onClick={() => onEdit(design)} className="p-2 text-white bg-blue-500 rounded-full hover:bg-blue-600"><Edit size={16}/></button>
-                                <button onClick={() => onDelete(design)} className="p-2 text-white bg-red-500 rounded-full hover:bg-red-600"><Trash2 size={16}/></button>
-                            </div>
-                        </motion.div>
-                    ))}
-                    </AnimatePresence>
-                </div>
-            )}
-        </main>
-    );
+    return <Outlet />;
 };
 
-declare const jsPDF: any;
-declare const html2canvas: any;
 
-const ReportsPage: React.FC<{ project: Project | null; tasks: Task[], team: TeamMember[], budget: BudgetItem[], risks: Risk[], t: (key: string) => string; locale: Locale; }> = ({ project, tasks, team, budget, risks, t, locale }) => {
-    const reportRef = useRef<HTMLDivElement>(null);
-    if (!project) return <main className="flex-1 p-6 overflow-y-auto"><EmptyState title={t('noProjectSelected')} message={t('noProjectMessage')} /></main>;
+// 10. AUTHENTICATION PAGE
+const LoginPage: React.FC<{ onLogin: (email: string, pass: string) => Promise<void>; t: (key: string) => string; }> = ({ onLogin, t }) => {
+    const [email, setEmail] = useState('');
+    const [password, setPassword] = useState('');
+    const [error, setError] = useState('');
+    const [isLoading, setIsLoading] = useState(false);
 
-    const teamMap = new Map(team.map(member => [member.id, member.name]));
-
-    const handleExportCsv = () => {
-        if (!project) return;
-        const escapeCsvCell = (cell: any): string => {
-            const cellStr = String(cell ?? '');
-            if (cellStr.includes(',') || cellStr.includes('"') || cellStr.includes('\n')) {
-                return `"${cellStr.replace(/"/g, '""')}"`;
-            }
-            return cellStr;
-        };
-        let csvContent = `Project Report: ${escapeCsvCell(project.name)}\n\n`;
-        csvContent += "Tasks\nName,Description,Status,Due Date,Priority,Assignee\n";
-        tasks.forEach(task => { const assigneeName = task.assigneeId ? teamMap.get(task.assigneeId) : 'Unassigned'; csvContent += [escapeCsvCell(task.name), escapeCsvCell(task.description), escapeCsvCell(task.status), escapeCsvCell(task.dueDate), escapeCsvCell(task.priority), escapeCsvCell(assigneeName)].join(',') + '\n'; });
-        csvContent += '\nTeam\nName,Role,Email\n';
-        team.forEach(member => { csvContent += [escapeCsvCell(member.name), escapeCsvCell(member.role), escapeCsvCell(member.email)].join(',') + '\n'; });
-        csvContent += '\nBudget\nCategory,Allocated,Spent,Remaining\n';
-        budget.forEach(item => { csvContent += [escapeCsvCell(item.category), escapeCsvCell(item.allocated), escapeCsvCell(item.spent), escapeCsvCell(item.allocated - item.spent)].join(',') + '\n'; });
-        csvContent += '\nRisks\nDescription,Likelihood,Impact,Mitigation Strategy\n';
-        risks.forEach(risk => { csvContent += [escapeCsvCell(risk.description), escapeCsvCell(risk.likelihood), escapeCsvCell(risk.impact), escapeCsvCell(risk.mitigation)].join(',') + '\n'; });
-        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-        const link = document.createElement('a');
-        const url = URL.createObjectURL(blob);
-        link.setAttribute('href', url);
-        link.setAttribute('download', `${project.name}-report.csv`);
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-    };
-
-    const handleExportPdf = () => {
-        if (!reportRef.current || !project) return;
-        const isDarkMode = document.documentElement.classList.contains('dark');
-        if(isDarkMode) reportRef.current.classList.add('dark');
-        html2canvas(reportRef.current, { scale: 2, useCORS: true, backgroundColor: isDarkMode ? '#1f2937' : '#ffffff' }).then(canvas => {
-            if(isDarkMode) reportRef.current?.classList.remove('dark');
-            const imgData = canvas.toDataURL('image/png');
-            const pdf = new jsPDF.jsPDF({ orientation: 'p', unit: 'mm', format: 'a4' });
-            const pdfWidth = pdf.internal.pageSize.getWidth();
-            const canvasWidth = canvas.width;
-            const canvasHeight = canvas.height;
-            const ratio = canvasWidth / canvasHeight;
-            const imgHeight = pdfWidth / ratio;
-            let heightLeft = imgHeight;
-            let position = 0;
-            pdf.addImage(imgData, 'PNG', 0, position, pdfWidth, imgHeight);
-            heightLeft -= pdf.internal.pageSize.getHeight();
-            while (heightLeft > 0) {
-                position = heightLeft - imgHeight;
-                pdf.addPage();
-                pdf.addImage(imgData, 'PNG', 0, position, pdfWidth, imgHeight);
-                heightLeft -= pdf.internal.pageSize.getHeight();
-            }
-            pdf.save(`${project.name}-report.pdf`);
-        }).catch(err => {
-            console.error("Error generating PDF", err);
-            if(isDarkMode) reportRef.current?.classList.remove('dark');
-        });
-    };
-
-    const ReportSection: React.FC<{title: string; children: ReactNode}> = ({title, children}) => (
-        <div className="mt-8">
-            <h3 className="text-xl font-semibold text-gray-800 dark:text-gray-200">{title}</h3>
-            <div className="mt-4 overflow-x-auto bg-white rounded-lg shadow dark:bg-dark-secondary">
-                {children}
-            </div>
-        </div>
-    );
-    const tableHeaderStyle = "px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider dark:text-gray-400";
-    const tableCellStyle = "px-6 py-4 whitespace-nowrap text-sm text-gray-800 dark:text-gray-200";
-    const tableRowStyle = "border-b border-gray-200 dark:border-gray-700";
-
-    return (
-        <main className="flex-1 p-6 overflow-y-auto">
-            <div className="flex flex-col items-start justify-between sm:flex-row sm:items-center">
-                <h1 className="text-2xl font-bold text-gray-900 dark:text-white">{t('reportsTitle').replace('{projectName}', project.name)}</h1>
-                <div className="flex mt-4 space-x-2 sm:mt-0">
-                    <button onClick={handleExportCsv} className={btnSecondaryStyle}>{t('exportToCsv')}</button>
-                    <button onClick={handleExportPdf} className={btnPrimaryStyle}>{t('exportToPdf')}</button>
-                </div>
-            </div>
-            <div ref={reportRef} className="p-4 mt-6 bg-white rounded-lg shadow dark:bg-dark-secondary">
-                <h2 className="text-lg font-semibold">{t('projectSummary')}</h2>
-                <p className="mt-2 text-gray-600 dark:text-gray-400">{project.description}</p>
-                <ReportSection title={t('tasks')}>
-                    <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
-                        <thead><tr><th className={tableHeaderStyle}>{t('taskName')}</th><th className={tableHeaderStyle}>{t('status')}</th><th className={tableHeaderStyle}>{t('dueDate')}</th><th className={tableHeaderStyle}>{t('assignee')}</th></tr></thead>
-                        <tbody className="bg-white divide-y divide-gray-200 dark:bg-dark-secondary dark:divide-gray-700">{tasks.map(task => <tr key={task.id} className={tableRowStyle}><td className={tableCellStyle}>{task.name}</td><td className={tableCellStyle}>{task.status}</td><td className={tableCellStyle}>{formatDate(task.dueDate, locale)}</td><td className={tableCellStyle}>{teamMap.get(task.assigneeId || '') || 'N/A'}</td></tr>)}</tbody>
-                    </table>
-                </ReportSection>
-                <ReportSection title={t('team')}>
-                    <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
-                        <thead><tr><th className={tableHeaderStyle}>{t('memberName')}</th><th className={tableHeaderStyle}>{t('role')}</th><th className={tableHeaderStyle}>{t('email')}</th></tr></thead>
-                        <tbody className="bg-white divide-y divide-gray-200 dark:bg-dark-secondary dark:divide-gray-700">{team.map(member => <tr key={member.id} className={tableRowStyle}><td className={tableCellStyle}>{member.name}</td><td className={tableCellStyle}>{member.role}</td><td className={tableCellStyle}>{member.email}</td></tr>)}</tbody>
-                    </table>
-                </ReportSection>
-                 <ReportSection title={t('budget')}>
-                    <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
-                        <thead><tr><th className={tableHeaderStyle}>{t('category')}</th><th className={tableHeaderStyle}>{t('allocated')}</th><th className={tableHeaderStyle}>{t('spent')}</th><th className={tableHeaderStyle}>{t('remaining')}</th></tr></thead>
-                        <tbody className="bg-white divide-y divide-gray-200 dark:bg-dark-secondary dark:divide-gray-700">{budget.map(item => <tr key={item.id} className={tableRowStyle}><td className={tableCellStyle}>{item.category}</td><td className={tableCellStyle}>{formatCurrencyEGP(item.allocated, locale)}</td><td className={tableCellStyle}>{formatCurrencyEGP(item.spent, locale)}</td><td className={tableCellStyle}>{formatCurrencyEGP(item.allocated - item.spent, locale)}</td></tr>)}</tbody>
-                    </table>
-                </ReportSection>
-                <ReportSection title={t('risks')}>
-                    <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
-                        <thead><tr><th className={tableHeaderStyle}>{t('description')}</th><th className={tableHeaderStyle}>{t('likelihood')}</th><th className={tableHeaderStyle}>{t('impact')}</th></tr></thead>
-                        <tbody className="bg-white divide-y divide-gray-200 dark:bg-dark-secondary dark:divide-gray-700">{risks.map(risk => <tr key={risk.id} className={tableRowStyle}><td className={tableCellStyle}>{risk.description}</td><td className={tableCellStyle}>{risk.likelihood}</td><td className={tableCellStyle}>{risk.impact}</td></tr>)}</tbody>
-                    </table>
-                </ReportSection>
-            </div>
-        </main>
-    );
-};
-
-const CalendarPage: React.FC<{ project: Project | null; tasks: Task[]; t: (key: string) => string; }> = ({ project, tasks, t }) => {
-    if (!project) {
-        return <main className="flex-1 p-6 overflow-y-auto"><EmptyState title={t('noProjectSelected')} message={t('noProjectMessage')} /></main>;
-    }
-
-    // react-big-calendar is loaded via script tag, so we access it from window
-    const { Calendar, momentLocalizer } = (window as any).ReactBigCalendar;
-    const localizer = momentLocalizer((window as any).moment);
-
-    const events = useMemo(() =>
-        tasks
-            .filter(task => task.dueDate) // Ensure task has a due date
-            .map(task => ({
-                id: task.id,
-                title: task.name,
-                start: new Date(task.dueDate),
-                end: new Date(task.dueDate),
-                allDay: true,
-                resource: task,
-            }))
-    , [tasks]);
-
-    const eventStyleGetter = (event: any) => {
-        const task = event.resource as Task;
-        let backgroundColor = '#9ca3af'; // gray-400 for default
-        switch(task.status) {
-            case 'In Progress': backgroundColor = '#3b82f6'; break; // blue-500
-            case 'Done':        backgroundColor = '#10b981'; break; // emerald-500
-            case 'Archived':    backgroundColor = '#f59e0b'; break; // yellow-500
-        }
-        return { style: { backgroundColor, color: 'white', borderRadius: '4px', border: 'none', opacity: 0.9, padding: '2px 5px' } };
-    };
-
-    return (
-        <main className="flex flex-col flex-1 p-6 overflow-hidden">
-            <h1 className="flex-shrink-0 text-2xl font-bold text-gray-900 dark:text-white">{t('calendarTitle').replace('{projectName}', project.name)}</h1>
-            <div className="flex-1 mt-4 p-4 bg-white rounded-lg shadow-md dark:bg-dark-secondary">
-                <Calendar
-                    localizer={localizer}
-                    events={events}
-                    startAccessor="start"
-                    endAccessor="end"
-                    style={{ height: '100%' }}
-                    eventPropGetter={eventStyleGetter}
-                />
-            </div>
-        </main>
-    );
-};
-
-const SettingsPage: React.FC<{ project: Project | null; activityLogs: ActivityLog[]; t: (key: string) => string; locale: Locale; }> = ({ project, activityLogs, t, locale }) => {
-    if (!project) return <main className="flex-1 p-6 overflow-y-auto"><EmptyState title={t('noProjectSelected')} message={t('noProjectMessage')} /></main>;
-    return (
-        <main className="flex-1 p-6 overflow-y-auto">
-            <h1 className="text-2xl font-bold text-gray-900 dark:text-white">{t('settingsTitle')}</h1>
-            <div className="p-4 mt-6 bg-white rounded-lg shadow dark:bg-dark-secondary">
-                <h2 className="text-lg font-semibold">{t('activityLog')}</h2>
-                {activityLogs.length === 0 ? <p className="mt-2 text-gray-500">{t('noActivity')}</p> : (
-                    <ul className="mt-4 space-y-2">
-                        {activityLogs.map(log => (
-                            <li key={log.id} className="text-sm text-gray-600 dark:text-gray-400">
-                                <span className="font-semibold text-gray-800 dark:text-gray-200">{log.userEmail}</span> {log.action} <span className="text-xs text-gray-500">({formatDateTime(log.timestamp, locale)})</span>
-                            </li>
-                        ))}
-                    </ul>
-                )}
-            </div>
-        </main>
-    );
-};
-
-const ProfilePage: React.FC<{ user: User; t: (key: string) => string; }> = ({ user, t }) => {
-    const [myTasks, setMyTasks] = useState<Task[]>([]);
-    const [myProjects, setMyProjects] = useState<Project[]>([]);
-    const [completedProjectsCount, setCompletedProjectsCount] = useState(0);
-    const [loading, setLoading] = useState(true);
-
-    useEffect(() => {
-        const fetchUserData = async () => {
-            if (!user || !user.email) return;
-            setLoading(true);
-            
-            // Fetch all projects the user is a member of
-            const projectsQuery = query(collection(db, "artifacts", appId, "public", "data", "projects"), where("members", "array-contains", user.email));
-            const projectsSnapshot = await getDocs(projectsQuery);
-            const projectsData = projectsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })) as Project[];
-            setMyProjects(projectsData);
-            
-            // Fetch completed projects count
-            const completedProjectsQuery = query(collection(db, "artifacts", appId, "public", "data", "projects"), where("ownerId", "==", user.uid), where("status", "==", "Completed"));
-            const completedProjectsSnapshot = await getDocs(completedProjectsQuery);
-            setCompletedProjectsCount(completedProjectsSnapshot.size);
-
-            // Fetch tasks assigned to the user across all their projects
-            const allTasks: Task[] = [];
-            for (const project of projectsData) {
-                const teamQuery = collection(db, "artifacts", appId, "public", "data", "projects", project.id, "team");
-                const teamSnapshot = await getDocs(teamQuery);
-                const teamMembers = teamSnapshot.docs.map(d => ({id: d.id, ...d.data()})) as TeamMember[];
-                const currentUserAsMember = teamMembers.find(m => m.email === user.email);
-
-                if (currentUserAsMember) {
-                    const tasksQuery = query(collection(db, "artifacts", appId, "public", "data", "projects", project.id, "tasks"), where("assigneeId", "==", currentUserAsMember.id));
-                    const tasksSnapshot = await getDocs(tasksQuery);
-                    tasksSnapshot.docs.forEach(doc => {
-                        allTasks.push({ id: doc.id, ...doc.data(), projectId: project.id, projectName: project.name } as Task);
-                    });
-                }
-            }
-            setMyTasks(allTasks);
-            setLoading(false);
-        };
-
-        fetchUserData();
-    }, [user]);
-
-    if (loading) return <main className="flex-1 p-6 overflow-y-auto"><div className="flex items-center justify-center flex-1"><BouncingLoader /></div></main>;
-    
-    return (
-        <main className="flex-1 p-6 overflow-y-auto">
-            <h1 className="text-2xl font-bold text-gray-900 dark:text-white">{t('profileTitle')}</h1>
-            <div className="grid grid-cols-1 gap-6 mt-6 lg:grid-cols-3">
-                <div className="p-4 bg-white rounded-lg shadow lg:col-span-2 dark:bg-dark-secondary">
-                    <h2 className="text-lg font-semibold">{t('myTasks')}</h2>
-                    {myTasks.length === 0 ? <p className="mt-2 text-gray-500">{t('noAssignedTasks')}</p> : (
-                        <ul className="mt-2 space-y-2">
-                            {myTasks.map(task => (
-                                <li key={task.id} className="p-2 border rounded-md dark:border-gray-700">
-                                    <p className="font-medium">{task.name} <span className="text-sm text-gray-500">- {task.projectName}</span></p>
-                                    <span className={`px-2 py-0.5 text-xs font-semibold rounded-full ${getStatusColor(task.status)} text-white`}>{task.status}</span>
-                                </li>
-                            ))}
-                        </ul>
-                    )}
-                </div>
-                <div className="p-4 bg-white rounded-lg shadow dark:bg-dark-secondary">
-                    <h2 className="text-lg font-semibold">{t('myProjects')}</h2>
-                    <ul className="mt-2 space-y-2">
-                        {myProjects.map(p => <li key={p.id}>{p.name}</li>)}
-                    </ul>
-                    <h2 className="mt-6 text-lg font-semibold">{t('achievements')}</h2>
-                    <p className="mt-2 text-gray-500">{t('achievementCompletedProjects').replace('{count}', completedProjectsCount.toString())}</p>
-                </div>
-            </div>
-        </main>
-    );
-};
-
-// 11. MAIN APP COMPONENT
-const AppContent: React.FC = () => {
-    const { useGoogleLogin } = (window as any).ReactOAuth;
-
-    const [user, setUser] = useState<User | null>(null); const [loadingAuth, setLoadingAuth] = useState(true); const [projects, setProjects] = useState<Project[]>([]); const [selectedProjectId, setSelectedProjectId] = useState<string | null>(null); const [theme, setTheme] = useState<'light' | 'dark'>('light'); const [locale, setLocale] = useState<Locale>('en');
-    const [tasks, setTasks] = useState<Task[]>([]); const [team, setTeam] = useState<TeamMember[]>([]); const [budget, setBudget] = useState<BudgetItem[]>([]); const [risks, setRisks] = useState<Risk[]>([]); const [designs, setDesigns] = useState<Design[]>([]); const [activityLogs, setActivityLogs] = useState<ActivityLog[]>([]);
-    const [isNewProjectModalOpen, setIsNewProjectModalOpen] = useState(false); const [isTaskModalOpen, setIsTaskModalOpen] = useState(false); const [isTeamMemberModalOpen, setIsTeamMemberModalOpen] = useState(false); const [isBudgetItemModalOpen, setIsBudgetItemModalOpen] = useState(false); const [isRiskModalOpen, setIsRiskModalOpen] = useState(false); const [isDesignModalOpen, setIsDesignModalOpen] = useState(false); const [isConfirmModalOpen, setIsConfirmModalOpen] = useState(false);
-    const [editingProject, setEditingProject] = useState<Project | null>(null); const [editingTask, setEditingTask] = useState<Task | null>(null); const [editingMember, setEditingMember] = useState<TeamMember | null>(null); const [editingBudgetItem, setEditingBudgetItem] = useState<BudgetItem | null>(null); const [editingRisk, setEditingRisk] = useState<Risk | null>(null); const [editingDesign, setEditingDesign] = useState<Design | null>(null);
-    const [itemToDelete, setItemToDelete] = useState<{ type: string; id: string | Design; name?: string; } | null>(null);
-    const [notifiedReminders, setNotifiedReminders] = useState<Set<string>>(new Set());
-    const [googleToken, setGoogleToken] = useState<string | null>(null);
-
-    const handleGoogleLogin = useGoogleLogin({
-        onSuccess: tokenResponse => setGoogleToken(tokenResponse.access_token),
-        scope: 'https://www.googleapis.com/auth/drive.file',
-    });
-
-    const { addToast } = useToast();
-    const t = (key: string) => (translations[locale] as any)[key] || key;
-
-    const logActivity = async (action: string) => { if (!user || !selectedProjectId) return; try { await addDoc(collection(db, "artifacts", appId, "public", "data", "projects", selectedProjectId, "activity_logs"), { userEmail: user.email, action, timestamp: serverTimestamp() }); } catch (error) { console.error("Failed to log activity:", error); } };
-    
-    useEffect(() => { onAuthStateChanged(auth, (user) => { setUser(user); setLoadingAuth(false); }); document.documentElement.classList.toggle('dark', theme === 'dark'); document.documentElement.lang = locale; document.documentElement.dir = locale === 'ar' ? 'rtl' : 'ltr'; }, [theme, locale]);
-    
-    useEffect(() => {
-      if (!user || !user.email) {
-        setProjects([]);
-        setSelectedProjectId(null);
-        return;
-      }
-      const q = query(collection(db, "artifacts", appId, "public", "data", "projects"), where("members", "array-contains", user.email));
-      const unsubscribe = onSnapshot(q, (snapshot) => {
-        const projectsData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })) as Project[];
-        setProjects(projectsData);
-        setSelectedProjectId(currentId => {
-            const projectExists = projectsData.some(p => p.id === currentId);
-            if (currentId && projectExists) {
-                return currentId; // Keep the current selection if it still exists
-            }
-            if (projectsData.length > 0) {
-                return projectsData[0].id; // Otherwise, select the first project
-            }
-            return null; // Or clear selection if no projects exist
-        });
-      });
-      return () => unsubscribe();
-    }, [user]);
-
-    useEffect(() => { if (!selectedProjectId) { setTasks([]); setTeam([]); setBudget([]); setRisks([]); setDesigns([]); setActivityLogs([]); return; } const subCollections = ["tasks", "team", "budget", "risks", "designs", "activity_logs"]; const setters:any = { tasks: setTasks, team: setTeam, budget: setBudget, risks: setRisks, designs: setDesigns, activity_logs: setActivityLogs }; const unsubs = subCollections.map(col => { const colQuery = col === 'activity_logs' ? query(collection(db, "artifacts", appId, "public", "data", "projects", selectedProjectId, col), orderBy("timestamp", "desc")) : collection(db, "artifacts", appId, "public", "data", "projects", selectedProjectId, col); return onSnapshot(colQuery, snapshot => { const data = snapshot.docs.map(d => ({id: d.id, ...d.data()})); setters[col](data); }); }); return () => unsubs.forEach(unsub => unsub()); }, [selectedProjectId]);
-    
-    // Reset reminders when project changes
-    useEffect(() => {
-        setNotifiedReminders(new Set());
-    }, [selectedProjectId]);
-    
-    // Check for reminders
-    useEffect(() => {
-        const now = new Date();
-        now.setHours(23, 59, 59, 999); // Compare against end of today
-
-        tasks.forEach(task => {
-            if (task.reminderDate && task.status !== 'Done' && !notifiedReminders.has(task.id)) {
-                const reminderDateTime = new Date(task.reminderDate);
-                if (reminderDateTime <= now) {
-                    addToast(t('reminderToast').replace('{taskName}', task.name), 'info');
-                    setNotifiedReminders(prev => new Set(prev).add(task.id));
-                }
-            }
-        });
-    }, [tasks, addToast, t, notifiedReminders]);
-
-
-    const toggleTheme = () => setTheme(prev => prev === 'light' ? 'dark' : 'light'); const toggleLocale = () => setLocale(prev => prev === 'en' ? 'ar' : 'en'); const handleSignOut = () => signOut(auth);
-    
-    const handleSave = async (type: string, data: any) => {
-        if (!user || !selectedProjectId) return;
-        const { id, ...payload } = data;
-
-        // Dependency check for tasks
-        if (type === 'tasks' && payload.status === 'Done' && payload.parentId) {
-            const parentTask = tasks.find(t => t.id === payload.parentId);
-            if (parentTask && parentTask.status !== 'Done') {
-                addToast(t('parentTaskNotDoneError').replace('{parentTaskName}', parentTask.name), 'error');
-                return;
-            }
-        }
-        
-        if (type === 'team') {
-            const projectDocRef = doc(db, "artifacts", appId, "public", "data", "projects", selectedProjectId);
-            if (id) { // Editing member
-                const oldEmail = editingMember?.email;
-                const newEmail = payload.email;
-                if (oldEmail && newEmail && oldEmail !== newEmail) {
-                    await updateDoc(projectDocRef, { members: arrayRemove(oldEmail) });
-                    await updateDoc(projectDocRef, { members: arrayUnion(newEmail) });
-                }
-            } else { // Adding new member
-                await updateDoc(projectDocRef, { members: arrayUnion(payload.email) });
-            }
-        }
-        
-        if (type === 'tasks' && (payload.parentId === undefined || payload.parentId === '')) {
-            payload.parentId = null;
-        }
-
-        const collectionPath = ["artifacts", appId, "public", "data", "projects", selectedProjectId, type];
+    const handleSubmit = async (e: React.FormEvent) => {
+        e.preventDefault();
+        setError('');
+        setIsLoading(true);
         try {
-            if (id) { 
-                await updateDoc(doc(db, ...collectionPath, id), payload); 
-                logActivity(`Updated ${type.slice(0,-1)}: "${payload.name || payload.category || payload.description}"`); 
-                if (type === 'tasks' && payload.status === 'Done') {
-                    const batch = writeBatch(db);
-                    const subtasksQuery = query(collection(db, ...collectionPath), where("parentId", "==", id));
-                    const subtasksSnapshot = await getDocs(subtasksQuery);
-                    subtasksSnapshot.forEach(doc => {
-                        batch.update(doc.ref, { status: "Done" });
-                    });
-                    await batch.commit();
-                }
-            }
-            else { 
-                await addDoc(collection(db, ...collectionPath), { ...payload, priority: payload.priority || 'Medium' }); 
-                logActivity(`Created new ${type.slice(0,-1)}: "${payload.name || payload.category || payload.description}"`); 
-            }
-        } catch (error) { console.error("Error saving item:", error); }
+            await onLogin(email, password);
+        } catch (err: any) {
+            setError(err.message || 'Failed to sign in. Please check your credentials.');
+        } finally {
+            setIsLoading(false);
+        }
     };
     
-    const handleSaveProject = async (projectData: any) => { if (!user || !user.email) return; const { id, ...payload } = projectData; const projectsPath = ["artifacts", appId, "public", "data", "projects"]; if (id) { await updateDoc(doc(db, ...projectsPath, id), payload); logActivity(`Updated project: "${payload.name}"`); } else { const newDocRef = await addDoc(collection(db, ...projectsPath), { ...payload, ownerId: user.uid, status: 'Ongoing', members: [user.email] }); setSelectedProjectId(newDocRef.id); } };
-    const handleEditProject = (project: Project) => { setEditingProject(project); setIsNewProjectModalOpen(true); };
-    const handleDelete = (type: string, id: string | Design, name?: string) => { setItemToDelete({ type, id, name }); setIsConfirmModalOpen(true); };
-    
-    const confirmDelete = async () => { if (!itemToDelete || !user) return; const { type, id, name } = itemToDelete; if (type === 'project' && typeof id === 'string') { const subCollections = ['tasks', 'team', 'budget', 'risks', 'designs', 'activity_logs']; const batch = writeBatch(db); for (const subCollection of subCollections) { const subCollectionRef = collection(db, "artifacts", appId, "public", "data", "projects", id, subCollection); const snapshot = await getDocs(subCollectionRef); snapshot.docs.forEach(doc => batch.delete(doc.ref)); } batch.delete(doc(db, "artifacts", appId, "public", "data", "projects", id)); await batch.commit(); } else if (selectedProjectId && typeof id === 'string') { if (type === 'team') { const memberToDelete = team.find(m => m.id === id); if (memberToDelete?.email) { const projectDocRef = doc(db, "artifacts", appId, "public", "data", "projects", selectedProjectId); await updateDoc(projectDocRef, { members: arrayRemove(memberToDelete.email) }); } } const collectionPath = ["artifacts", appId, "public", "data", "projects", selectedProjectId, type]; await deleteDoc(doc(db, ...collectionPath, id)); logActivity(`Deleted ${type.slice(0,-1)}: "${name || id}"`); } else if (type === 'designs' && typeof id === 'object' && selectedProjectId && googleToken) { const design = id as Design; try { const response = await fetch(`https://www.googleapis.com/drive/v3/files/${design.fileId}`, { method: 'DELETE', headers: { 'Authorization': `Bearer ${googleToken}` } }); if (!response.ok && response.status !== 404) { throw new Error('Failed to delete from Google Drive'); } await deleteDoc(doc(db, "artifacts", appId, "public", "data", "projects", selectedProjectId, "designs", design.id)); logActivity(`Deleted design: "${design.name}"`); } catch (error) { console.error(error); addToast('Failed to delete design file.', 'error'); } } setItemToDelete(null); setIsConfirmModalOpen(false);};
-    
-    const handleUploadDesign = async (file: File) => {
-        if (!user || !selectedProjectId || !googleToken) throw new Error("Not authenticated");
-    
-        const metadata = { name: file.name, parents: [DRIVE_FOLDER_ID], mimeType: file.type };
-        const formData = new FormData();
-        formData.append('metadata', new Blob([JSON.stringify(metadata)], { type: 'application/json' }));
-        formData.append('file', file);
-    
-        const response = await fetch('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart&fields=id,name,webViewLink,webContentLink', {
-            method: 'POST',
-            headers: { 'Authorization': `Bearer ${googleToken}` },
-            body: formData,
-        });
-    
-        if (!response.ok) throw new Error('Upload to Google Drive failed');
-        const newFile = await response.json();
-    
-        await addDoc(collection(db, "artifacts", appId, "public", "data", "projects", selectedProjectId, "designs"), {
-            name: newFile.name,
-            fileId: newFile.id,
-            webViewLink: newFile.webViewLink,
-            webContentLink: newFile.webContentLink,
-            uploadedAt: serverTimestamp()
-        });
-        logActivity(`Uploaded new design: "${file.name}"`);
-    };
-    
-    const handleSaveDesignName = async (design: Pick<Design, 'id'|'name'>) => { if (selectedProjectId) { await updateDoc(doc(db, "artifacts", appId, "public", "data", "projects", selectedProjectId, "designs", design.id), { name: design.name }); logActivity(`Renamed design to: "${design.name}"`); } };
-
-    const selectedProject = projects.find(p => p.id === selectedProjectId) || null;
-
-    if (loadingAuth) return <div className="flex items-center justify-center h-screen bg-main"><BouncingLoader /></div>;
-    if (!user) return <LoginPage t={t} />;
-  
     return (
-        <BrowserRouter>
-          <DashboardLayout user={user} projects={projects} selectedProjectId={selectedProjectId} onSelectProject={setSelectedProjectId} onNewProject={() => { setEditingProject(null); setIsNewProjectModalOpen(true); }} onEditProject={handleEditProject} onDeleteProject={(id) => handleDelete('project', id, projects.find(p=>p.id===id)?.name)} onSignOut={handleSignOut} theme={theme} toggleTheme={toggleTheme} locale={locale} toggleLocale={toggleLocale} t={t}>
-            <Routes>
-              <Route path="/" element={<DashboardPage project={selectedProject} tasks={tasks} team={team} budget={budget} risks={risks} t={t} locale={locale} theme={theme} />} />
-              <Route path="/tasks" element={<TasksPage project={selectedProject} tasks={tasks} team={team} onNew={() => { setEditingTask(null); setIsTaskModalOpen(true); }} onEdit={(task) => { setEditingTask(task); setIsTaskModalOpen(true); }} onDelete={(id) => handleDelete('tasks', id, tasks.find(item=>item.id===id)?.name)} t={t} locale={locale} />} />
-              <Route path="/calendar" element={<CalendarPage project={selectedProject} tasks={tasks} t={t} />} />
-              <Route path="/team" element={<TeamPage project={selectedProject} team={team} onNew={() => { setEditingMember(null); setIsTeamMemberModalOpen(true); }} onEdit={(member) => { setEditingMember(member); setIsTeamMemberModalOpen(true); }} onDelete={(id) => handleDelete('team', id, team.find(item=>item.id===id)?.name)} t={t} />} />
-              <Route path="/budget" element={<BudgetPage project={selectedProject} budget={budget} onNew={() => { setEditingBudgetItem(null); setIsBudgetItemModalOpen(true); }} onEdit={(item) => { setEditingBudgetItem(item); setIsBudgetItemModalOpen(true); }} onDelete={(id) => handleDelete('budget', id, budget.find(item=>item.id===id)?.category)} t={t} locale={locale} />} />
-              <Route path="/risks" element={<RisksPage project={selectedProject} risks={risks} onNew={() => { setEditingRisk(null); setIsRiskModalOpen(true); }} onEdit={(risk) => { setEditingRisk(risk); setIsRiskModalOpen(true); }} onDelete={(id) => handleDelete('risks', id, risks.find(item=>item.id===id)?.description)} t={t} />} />
-              <Route path="/designs" element={<DesignsPage project={selectedProject} designs={designs} onEdit={(design) => { setEditingDesign(design); setIsDesignModalOpen(true); }} onDelete={(design) => handleDelete('designs', design, design.name)} onUpload={handleUploadDesign} t={t} locale={locale} token={googleToken} login={handleGoogleLogin} />} />
-              <Route path="/reports" element={<ReportsPage project={selectedProject} tasks={tasks} team={team} budget={budget} risks={risks} t={t} locale={locale} />} />
-              <Route path="/settings" element={<SettingsPage project={selectedProject} activityLogs={activityLogs} t={t} locale={locale} />} />
-              <Route path="/profile" element={<ProfilePage user={user} t={t} />} />
-              <Route path="*" element={<Navigate to="/" />} />
-            </Routes>
-          </DashboardLayout>
-          
-          <NewProjectModal isOpen={isNewProjectModalOpen} onClose={() => setIsNewProjectModalOpen(false)} onSave={handleSaveProject} editingProject={editingProject} t={t} />
-          <TaskModal isOpen={isTaskModalOpen} onClose={() => setIsTaskModalOpen(false)} onSave={(data) => handleSave('tasks', data)} editingTask={editingTask} team={team} tasks={tasks} t={t} />
-          <TeamMemberModal isOpen={isTeamMemberModalOpen} onClose={() => setIsTeamMemberModalOpen(false)} onSave={(data) => handleSave('team', data)} editingMember={editingMember} t={t} />
-          <BudgetItemModal isOpen={isBudgetItemModalOpen} onClose={() => setIsBudgetItemModalOpen(false)} onSave={(data) => handleSave('budget', data)} editingItem={editingBudgetItem} t={t} />
-          <RiskModal isOpen={isRiskModalOpen} onClose={() => setIsRiskModalOpen(false)} onSave={(data) => handleSave('risks', data)} editingRisk={editingRisk} t={t} />
-          <DesignModal isOpen={isDesignModalOpen} onClose={() => setIsDesignModalOpen(false)} onSave={handleSaveDesignName} editingDesign={editingDesign} t={t} />
-          <ConfirmationModal isOpen={isConfirmModalOpen} onClose={() => setIsConfirmModalOpen(false)} onConfirm={confirmDelete} title={itemToDelete?.type === 'project' ? t('deleteProjectTitle') : t('deleteItemTitle')} message={itemToDelete?.type === 'project' ? t('deleteProjectMessage') : t('deleteItemMessage')} t={t} />
-        </BrowserRouter>
-    );
-};
-
-const App: React.FC = () => {
-    // This component is a wrapper for the GoogleOAuthProvider.
-    // The main app logic is moved to AppContent to allow the use of the useGoogleLogin hook.
-    const { GoogleOAuthProvider } = (window as any).ReactOAuth || {};
-
-    if (!GoogleOAuthProvider) {
-        // Render a loader or fallback if the script hasn't loaded yet
-        return <div className="flex items-center justify-center h-screen bg-main"><BouncingLoader /></div>;
-    }
-
-    return (
-        <GoogleOAuthProvider clientId={GOOGLE_CLIENT_ID}>
-            <AppContent />
-        </GoogleOAuthProvider>
-    );
-};
-
-
-const AppWrapper: React.FC = () => (
-    <ToastProvider>
-        <App />
-    </ToastProvider>
-);
-
-const LoginPage: React.FC<{t: (key: string) => string}> = ({ t }) => {
-    const [email, setEmail] = useState(''); const [password, setPassword] = useState(''); const [error, setError] = useState('');
-    const handleLogin = async (e: React.FormEvent) => { e.preventDefault(); setError(''); try { await signInWithEmailAndPassword(auth, email, password); } catch (err: any) { setError(err.message); } };
-    return (
-        <div className="flex items-center justify-center min-h-screen bg-main">
-            <motion.div initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }} className="w-full max-w-sm p-8 space-y-6 bg-white rounded-xl shadow-lg dark:bg-dark-secondary">
-                <h1 className="text-2xl font-bold text-center text-primary">{t('loginTitle')}</h1>
-                <form onSubmit={handleLogin} className="space-y-6">
-                    <div> <label htmlFor="email" className={labelStyle}>{t('email')}</label> <input id="email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} className={inputStyle} required /> </div>
-                    <div> <label htmlFor="password"className={labelStyle}>{t('password')}</label> <input id="password" type="password" value={password} onChange={(e) => setPassword(e.target.value)} className={inputStyle} required /> </div>
-                    {error && <p className="text-sm text-red-500">{error}</p>}
-                    <button type="submit" className={`w-full ${btnPrimaryStyle}`}>{t('logIn')}</button>
+        <div className="flex items-center justify-center min-h-screen bg-gray-50 dark:bg-dark-primary">
+            <motion.div 
+                initial={{ opacity: 0, y: -20 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="w-full max-w-md p-8 space-y-8 bg-white rounded-2xl shadow-lg dark:bg-dark-secondary"
+            >
+                <div className="text-center">
+                    <h1 className="text-3xl font-bold text-primary">ProjectHub</h1>
+                    <p className="mt-2 text-gray-600 dark:text-gray-400">{t('loginTitle')}</p>
+                </div>
+                <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
+                    <div className="space-y-4 rounded-md shadow-sm">
+                        <div>
+                            <label htmlFor="email-address" className="sr-only">{t('email')}</label>
+                            <input id="email-address" name="email" type="email" autoComplete="email" required value={email} onChange={e => setEmail(e.target.value)} className="relative block w-full px-3 py-2 text-gray-900 placeholder-gray-500 border border-gray-300 rounded-md appearance-none focus:outline-none focus:ring-primary focus:border-primary focus:z-10 sm:text-sm dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white" placeholder={t('email')} />
+                        </div>
+                        <div>
+                            <label htmlFor="password">{t('password')}</label>
+                            <input id="password" name="password" type="password" autoComplete="current-password" required value={password} onChange={e => setPassword(e.target.value)} className="relative block w-full px-3 py-2 text-gray-900 placeholder-gray-500 border border-gray-300 rounded-md appearance-none focus:outline-none focus:ring-primary focus:border-primary focus:z-10 sm:text-sm dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white" placeholder={t('password')} />
+                        </div>
+                    </div>
+                    {error && <p className="text-sm text-center text-red-500">{error}</p>}
+                    <div>
+                        <button type="submit" disabled={isLoading} className="relative flex justify-center w-full px-4 py-2 text-sm font-medium text-white border border-transparent rounded-md group bg-primary hover:bg-primary-dark focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-dark disabled:opacity-50">
+                            {isLoading ? <BouncingLoader /> : t('logIn')}
+                        </button>
+                    </div>
                 </form>
             </motion.div>
         </div>
     );
 };
 
-export default AppWrapper;
+
+// 11. CONTEXT FOR PROJECT DATA
+interface ProjectContextType {
+    currentProject: Project | null;
+    projects: Project[];
+}
+const ProjectContext = createContext<ProjectContextType>({ currentProject: null, projects: [] });
+export const useProjectContext = () => useContext(ProjectContext);
+
+
+// 12. MAIN APP COMPONENT
+import { Outlet } from 'react-router-dom';
+
+const App = () => {
+    const [user, setUser] = useState<User | null>(null);
+    const [loading, setLoading] = useState(true);
+    const [theme, setTheme] = useState<'light' | 'dark'>(() => (localStorage.getItem('theme') as 'light' | 'dark') || 'light');
+    const [locale, setLocale] = useState<Locale>(() => (localStorage.getItem('locale') as Locale) || 'en');
+    const [isSidebarOpen, setSidebarOpen] = useState(false);
+    
+    const [projects, setProjects] = useState<Project[]>([]);
+    const [selectedProjectId, setSelectedProjectId] = useState<string | null>(() => localStorage.getItem('selectedProjectId'));
+    
+    const currentProject = useMemo(() => projects.find(p => p.id === selectedProjectId) || null, [projects, selectedProjectId]);
+
+    const t = (key: string) => (translations[locale] as any)[key] || key;
+
+    useEffect(() => {
+        document.documentElement.classList.toggle('dark', theme === 'dark');
+        localStorage.setItem('theme', theme);
+    }, [theme]);
+
+    useEffect(() => {
+        document.documentElement.lang = locale;
+        document.documentElement.dir = locale === 'ar' ? 'rtl' : 'ltr';
+        localStorage.setItem('locale', locale);
+    }, [locale]);
+    
+    useEffect(() => {
+        const unsubscribe = onAuthStateChanged(auth, (user) => {
+            setUser(user);
+            if (!user) {
+                setSelectedProjectId(null);
+                setProjects([]);
+            }
+            setLoading(false);
+        });
+        return () => unsubscribe();
+    }, []);
+
+    useEffect(() => {
+        if (user) {
+            const q = query(collection(db, "projects"), where("members", "array-contains", user.uid));
+            const unsubscribe = onSnapshot(q, (querySnapshot) => {
+                const projectsData = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Project));
+                setProjects(projectsData);
+                if (projectsData.length > 0 && !projectsData.some(p => p.id === selectedProjectId)) {
+                    const newProjectId = projectsData[0].id;
+                    setSelectedProjectId(newProjectId);
+                    localStorage.setItem('selectedProjectId', newProjectId);
+                } else if (projectsData.length === 0) {
+                    setSelectedProjectId(null);
+                    localStorage.removeItem('selectedProjectId');
+                }
+            });
+            return () => unsubscribe();
+        }
+    }, [user, selectedProjectId]);
+
+    const handleLogin = (email: string, pass: string) => signInWithEmailAndPassword(auth, email, pass);
+    const handleSignOut = () => signOut(auth);
+    const toggleTheme = () => setTheme(prev => prev === 'light' ? 'dark' : 'light');
+    const toggleLocale = () => setLocale(prev => prev === 'en' ? 'ar' : 'en');
+    const handleSelectProject = (id: string) => {
+        setSelectedProjectId(id);
+        localStorage.setItem('selectedProjectId', id);
+    };
+
+    if (loading) {
+        return <div className="flex items-center justify-center w-full h-screen bg-gray-50 dark:bg-dark-primary"><BouncingLoader /></div>;
+    }
+
+    if (!user) {
+        return <LoginPage onLogin={handleLogin} t={t} />;
+    }
+    
+    return (
+        <ToastProvider>
+            <ProjectContext.Provider value={{ currentProject, projects }}>
+                <BrowserRouter>
+                    <div className={`flex h-screen bg-gray-100 dark:bg-dark-primary text-gray-900 dark:text-gray-100`}>
+                        <Sidebar 
+                            projects={projects}
+                            selectedProjectId={selectedProjectId}
+                            onSelectProject={handleSelectProject}
+                            onNewProject={() => alert('New Project clicked')}
+                            onEditProject={(p) => alert(`Edit ${p.name}`)}
+                            onDeleteProject={(id) => alert(`Delete ${id}`)}
+                            isOpen={isSidebarOpen}
+                            onClose={() => setSidebarOpen(false)}
+                            t={t}
+                        />
+                        <div className="flex flex-col flex-1 overflow-hidden">
+                            <Header 
+                                user={user}
+                                onSignOut={handleSignOut}
+                                onMenuClick={() => setSidebarOpen(true)}
+                                theme={theme}
+                                toggleTheme={toggleTheme}
+                                locale={locale}
+                                toggleLocale={toggleLocale}
+                                t={t}
+                            />
+                            <main className="flex-1 overflow-x-hidden overflow-y-auto bg-gray-50 dark:bg-dark-primary">
+                                <Routes>
+                                    <Route element={<ProjectScope t={t} />}>
+                                        <Route path="/" element={<PlaceholderPage title={t('dashboard')} />} />
+                                        <Route path="/tasks" element={<PlaceholderPage title={t('tasks')} />} />
+                                        <Route path="/calendar" element={<PlaceholderPage title={t('calendar')} />} />
+                                        <Route path="/team" element={<PlaceholderPage title={t('team')} />} />
+                                        <Route path="/budget" element={<PlaceholderPage title={t('budget')} />} />
+                                        <Route path="/risks" element={<PlaceholderPage title={t('risks')} />} />
+                                        <Route path="/designs" element={<PlaceholderPage title={t('designs')} />} />
+                                        <Route path="/reports" element={<PlaceholderPage title={t('reports')} />} />
+                                        <Route path="/settings" element={<PlaceholderPage title={t('settings')} />} />
+                                    </Route>
+                                    <Route path="/profile" element={<PlaceholderPage title={t('profile')} />} />
+                                    <Route path="*" element={<Navigate to="/" />} />
+                                </Routes>
+                            </main>
+                        </div>
+                    </div>
+                </BrowserRouter>
+            </ProjectContext.Provider>
+        </ToastProvider>
+    );
+};
+
+export default App;
