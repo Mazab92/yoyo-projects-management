@@ -33,6 +33,11 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 
+  <!-- Calendar Libraries -->
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/react-big-calendar/1.8.1/react-big-calendar.css" rel="stylesheet" />
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.29.1/moment.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/react-big-calendar/1.8.1/react-big-calendar.umd.js"></script>
+
   <!-- Tailwind CSS -->
   <script src="https://cdn.tailwindcss.com"></script>
   <script>
@@ -75,6 +80,18 @@
     .dark .bg-main {
         background-color: #111827;
     }
+    /* Calendar Dark Mode Overrides */
+    .dark .rbc-toolbar button { color: #d1d5db; }
+    .dark .rbc-toolbar button:active, .dark .rbc-toolbar button.rbc-active { background-color: #3b82f6; color: white; border-color: #3b82f6; }
+    .dark .rbc-toolbar button:focus { background-color: #2563eb; }
+    .dark .rbc-toolbar { color: #d1d5db; }
+    .dark .rbc-header { border-bottom-color: #374151; color: #e5e7eb; }
+    .dark .rbc-month-view, .dark .rbc-time-view { border-color: #374151; color: #e5e7eb; }
+    .dark .rbc-day-bg { border-left-color: #374151; }
+    .dark .rbc-off-range-bg { background-color: #1f2937; }
+    .dark .rbc-today { background-color: rgba(37, 99, 235, 0.2); }
+    .dark .rbc-time-header-content, .dark .rbc-time-gutter-cell, .dark .rbc-timeslot-group, .dark .rbc-time-view .rbc-row { border-color: #374151; }
+    .dark .rbc-current-time-indicator { background-color: #3b82f6; }
   </style>
 
 </head>

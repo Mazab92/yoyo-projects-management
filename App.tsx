@@ -1,12 +1,16 @@
 
 
+
+
+
 // Yoyo Project Management - Single File Application
 // This file contains the entire refactored React application, including all components, pages, types, and logic.
 
 // 1. IMPORTS
 import React, { useState, useEffect, useRef, ReactNode, createContext, useContext, useMemo } from 'react';
 import { BrowserRouter, Routes, Route, Navigate, NavLink, Link } from 'react-router-dom';
-import { initializeApp, getApps, getApp } from 'firebase/app';
+// Fix: Use namespace import for 'firebase/app' to resolve module export errors.
+import * as firebaseApp from 'firebase/app';
 import { getAuth, onAuthStateChanged, signInWithEmailAndPassword, signOut, User } from 'firebase/auth';
 import { 
     getFirestore, collection, onSnapshot, doc, addDoc, updateDoc, deleteDoc, query, where, writeBatch, serverTimestamp, getDocs, orderBy, arrayUnion, arrayRemove
@@ -34,7 +38,8 @@ const firebaseConfig = {
   measurementId: "G-9YHY63624V"
 };
 
-const app = !getApps().length ? initializeApp(firebaseConfig) : getApp();
+// Fix: Call Firebase functions from the imported namespace.
+const app = !firebaseApp.getApps().length ? firebaseApp.initializeApp(firebaseConfig) : firebaseApp.getApp();
 const auth = getAuth(app);
 const db = getFirestore(app);
 const storage = getStorage(app);
@@ -46,7 +51,7 @@ const translations = {
     // General
     "save": "Save", "cancel": "Cancel", "delete": "Delete", "confirm": "Confirm", "edit": "Edit", "add": "Add", "urgent": "Urgent", "high": "High", "medium": "Medium", "low": "Low", "priority": "Priority", "parentTask": "Parent Task", "parent": "Parent",
     // Sidebar
-    "dashboard": "Dashboard", "tasks": "Tasks", "team": "Team", "budget": "Budget", "risks": "Risks", "designs": "Designs", "projects": "Projects", "settings": "Settings", "reports": "Reports",
+    "dashboard": "Dashboard", "tasks": "Tasks", "calendar": "Calendar", "team": "Team", "budget": "Budget", "risks": "Risks", "designs": "Designs", "projects": "Projects", "settings": "Settings", "reports": "Reports",
     // Header
     "signOut": "Sign Out", "profile": "Profile",
     // Login
@@ -67,6 +72,7 @@ const translations = {
     "dashboardTitle": "Dashboard: {projectName}",
     "totalTasks": "Total Tasks", "teamMembers": "Team Members", "openRisks": "Open Risks", "budgetSpent": "Budget Spent", "taskStatus": "Task Status", "budgetOverview": "Budget Overview", "avgProjectProgress": "Avg. Project Progress",
     "tasksTitle": "Tasks for {projectName}", "noTasks": "No Tasks", "noTasksMessage": "Get started by creating a new task.",
+    "calendarTitle": "Calendar for {projectName}",
     "teamTitle": "Team for {projectName}", "noTeam": "No Team Members", "noTeamMessage": "Add team members to your project.",
     "budgetTitle": "Budget for {projectName}", "noBudget": "No Budget Items", "noBudgetMessage": "Add budget items to track project expenses.", "allocated": "Allocated", "spent": "Spent", "remaining": "Remaining", "total": "Total",
     "risksTitle": "Risks for {projectName}", "noRisks": "No Risks Identified", "noRisksMessage": "Add potential risks to your project.",
@@ -83,7 +89,7 @@ const translations = {
     // General
     "save": "حفظ", "cancel": "إلغاء", "delete": "حذف", "confirm": "تأكيد", "edit": "تعديل", "add": "إضافة", "urgent": "عاجل", "high": "مرتفع", "medium": "متوسط", "low": "منخفض", "priority": "الأولوية", "parentTask": "المهمة الرئيسية", "parent": "رئيسي",
     // Sidebar
-    "dashboard": "لوحة التحكم", "tasks": "المهام", "team": "الفريق", "budget": "الميزانية", "risks": "المخاطر", "designs": "التصاميم", "projects": "المشاريع", "settings": "الإعدادات", "reports": "التقارير",
+    "dashboard": "لوحة التحكم", "tasks": "المهام", "calendar": "التقويم", "team": "الفريق", "budget": "الميزانية", "risks": "المخاطر", "designs": "التصاميم", "projects": "المشاريع", "settings": "الإعدادات", "reports": "التقارير",
     // Header
     "signOut": "تسجيل الخروج", "profile": "الملف الشخصي",
     // Login
@@ -104,6 +110,7 @@ const translations = {
     "dashboardTitle": "لوحة التحكم: {projectName}",
     "totalTasks": "إجمالي المهام", "teamMembers": "أعضاء الفريق", "openRisks": "المخاطر القائمة", "budgetSpent": "الميزانية المصروفة", "taskStatus": "حالة المهام", "budgetOverview": "نظرة عامة على الميزانية", "avgProjectProgress": "متوسط تقدم المشروع",
     "tasksTitle": "مهام مشروع {projectName}", "noTasks": "لا توجد مهام", "noTasksMessage": "ابدأ بإنشاء مهمة جديدة.",
+    "calendarTitle": "تقويم: {projectName}",
     "teamTitle": "فريق مشروع {projectName}", "noTeam": "لا يوجد أعضاء في الفريق", "noTeamMessage": "أضف أعضاء الفريق إلى مشروعك.",
     "budgetTitle": "ميزانية مشروع {projectName}", "noBudget": "لا توجد بنود في الميزانية", "noBudgetMessage": "أضف بنود الميزانية لتتبع نفقات المشروع.", "allocated": "المخصص", "spent": "المصروف", "remaining": "المتبقي", "total": "الإجمالي",
     "risksTitle": "مخاطر مشروع {projectName}", "noRisks": "لم يتم تحديد مخاطر", "noRisksMessage": "أضف المخاطر المحتملة لمشروعك.",
@@ -294,7 +301,7 @@ const Header: React.FC<{ user: User | null; onSignOut: () => void; onMenuClick: 
 };
 const Sidebar: React.FC<{ projects: Project[]; selectedProjectId: string | null; onSelectProject: (id: string) => void; onNewProject: () => void; onEditProject: (project: Project) => void; onDeleteProject: (id: string) => void; isOpen: boolean; onClose: () => void; t: (key: string) => string; }> = ({ projects, selectedProjectId, onSelectProject, onNewProject, onEditProject, onDeleteProject, isOpen, onClose, t }) => {
     const navLinks = [
-        { name: t('dashboard'), icon: <LayoutDashboard size={20} />, path: '/' }, { name: t('tasks'), icon: <CheckSquare size={20} />, path: '/tasks' }, { name: t('team'), icon: <Users size={20} />, path: '/team' }, { name: t('budget'), icon: <DollarSign size={20} />, path: '/budget' }, { name: t('risks'), icon: <AlertTriangle size={20} />, path: '/risks' }, { name: t('designs'), icon: <Image size={20} />, path: '/designs' }, { name: t('reports'), icon: <FileText size={20} />, path: '/reports' }, { name: t('settings'), icon: <Settings size={20} />, path: '/settings' },
+        { name: t('dashboard'), icon: <LayoutDashboard size={20} />, path: '/' }, { name: t('tasks'), icon: <CheckSquare size={20} />, path: '/tasks' }, { name: t('calendar'), icon: <Calendar size={20} />, path: '/calendar' }, { name: t('team'), icon: <Users size={20} />, path: '/team' }, { name: t('budget'), icon: <DollarSign size={20} />, path: '/budget' }, { name: t('risks'), icon: <AlertTriangle size={20} />, path: '/risks' }, { name: t('designs'), icon: <Image size={20} />, path: '/designs' }, { name: t('reports'), icon: <FileText size={20} />, path: '/reports' }, { name: t('settings'), icon: <Settings size={20} />, path: '/settings' },
     ];
     return (
         <>
@@ -843,6 +850,56 @@ const ReportsPage: React.FC<{ project: Project | null; tasks: Task[], team: Team
     );
 };
 
+const CalendarPage: React.FC<{ project: Project | null; tasks: Task[]; t: (key: string) => string; }> = ({ project, tasks, t }) => {
+    if (!project) {
+        return <main className="flex-1 p-6 overflow-y-auto"><EmptyState title={t('noProjectSelected')} message={t('noProjectMessage')} /></main>;
+    }
+
+    // react-big-calendar is loaded via script tag, so we access it from window
+    const { Calendar, momentLocalizer } = (window as any).ReactBigCalendar;
+    const localizer = momentLocalizer((window as any).moment);
+
+    const events = useMemo(() =>
+        tasks
+            .filter(task => task.dueDate) // Ensure task has a due date
+            .map(task => ({
+                id: task.id,
+                title: task.name,
+                start: new Date(task.dueDate),
+                end: new Date(task.dueDate),
+                allDay: true,
+                resource: task,
+            }))
+    , [tasks]);
+
+    const eventStyleGetter = (event: any) => {
+        const task = event.resource as Task;
+        let backgroundColor = '#9ca3af'; // gray-400 for default
+        switch(task.status) {
+            case 'In Progress': backgroundColor = '#3b82f6'; break; // blue-500
+            case 'Done':        backgroundColor = '#10b981'; break; // emerald-500
+            case 'Archived':    backgroundColor = '#f59e0b'; break; // yellow-500
+        }
+        return { style: { backgroundColor, color: 'white', borderRadius: '4px', border: 'none', opacity: 0.9, padding: '2px 5px' } };
+    };
+
+    return (
+        <main className="flex flex-col flex-1 p-6 overflow-hidden">
+            <h1 className="flex-shrink-0 text-2xl font-bold text-gray-900 dark:text-white">{t('calendarTitle').replace('{projectName}', project.name)}</h1>
+            <div className="flex-1 mt-4 p-4 bg-white rounded-lg shadow-md dark:bg-dark-secondary">
+                <Calendar
+                    localizer={localizer}
+                    events={events}
+                    startAccessor="start"
+                    endAccessor="end"
+                    style={{ height: '100%' }}
+                    eventPropGetter={eventStyleGetter}
+                />
+            </div>
+        </main>
+    );
+};
+
 const SettingsPage: React.FC<{ project: Project | null; activityLogs: ActivityLog[]; t: (key: string) => string; locale: Locale; }> = ({ project, activityLogs, t, locale }) => {
     if (!project) return <main className="flex-1 p-6 overflow-y-auto"><EmptyState title={t('noProjectSelected')} message={t('noProjectMessage')} /></main>;
     return (
@@ -1079,6 +1136,7 @@ const App: React.FC = () => {
             <Routes>
               <Route path="/" element={<DashboardPage project={selectedProject} tasks={tasks} team={team} budget={budget} risks={risks} t={t} locale={locale} theme={theme} />} />
               <Route path="/tasks" element={<TasksPage project={selectedProject} tasks={tasks} team={team} onNew={() => { setEditingTask(null); setIsTaskModalOpen(true); }} onEdit={(task) => { setEditingTask(task); setIsTaskModalOpen(true); }} onDelete={(id) => handleDelete('tasks', id, tasks.find(item=>item.id===id)?.name)} t={t} locale={locale} />} />
+              <Route path="/calendar" element={<CalendarPage project={selectedProject} tasks={tasks} t={t} />} />
               <Route path="/team" element={<TeamPage project={selectedProject} team={team} onNew={() => { setEditingMember(null); setIsTeamMemberModalOpen(true); }} onEdit={(member) => { setEditingMember(member); setIsTeamMemberModalOpen(true); }} onDelete={(id) => handleDelete('team', id, team.find(item=>item.id===id)?.name)} t={t} />} />
               <Route path="/budget" element={<BudgetPage project={selectedProject} budget={budget} onNew={() => { setEditingBudgetItem(null); setIsBudgetItemModalOpen(true); }} onEdit={(item) => { setEditingBudgetItem(item); setIsBudgetItemModalOpen(true); }} onDelete={(id) => handleDelete('budget', id, budget.find(item=>item.id===id)?.category)} t={t} locale={locale} />} />
               <Route path="/risks" element={<RisksPage project={selectedProject} risks={risks} onNew={() => { setEditingRisk(null); setIsRiskModalOpen(true); }} onEdit={(risk) => { setEditingRisk(risk); setIsRiskModalOpen(true); }} onDelete={(id) => handleDelete('risks', id, risks.find(item=>item.id===id)?.description)} t={t} />} />
