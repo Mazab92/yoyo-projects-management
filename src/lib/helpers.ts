@@ -26,4 +26,15 @@ export const getPriorityStyles = (priority: Priority): { color: string, text: st
     }
 };
 
+export const getPriorityTagColor = (priority: Priority): string => {
+    switch (priority) {
+        case 'Urgent': return 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300';
+        case 'High': return 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300';
+        case 'Medium': return 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300';
+        case 'Low': return 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300';
+        default: return 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300';
+    }
+};
+
+
 export const formatCurrencyEGP = (amount: number, locale: Locale): string => new Intl.NumberFormat(locale === 'ar' ? 'ar-EG' : 'en-US', {style:'currency', currency:'EGP', minimumFractionDigits:0}).format(amount).replace('EGP', 'E£');

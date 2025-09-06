@@ -1,7 +1,8 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 // Fix: Separated Firebase 'User' type import from function imports.
-import type { User } from 'firebase/auth';
+// FIX: Use User type from firebase/compat/auth
+import type { User } from 'firebase/compat/auth';
 import { LogOut, Menu, User as UserIcon } from 'lucide-react';
 import { motion } from 'framer-motion';
 import ThemeToggle from './ThemeToggle';

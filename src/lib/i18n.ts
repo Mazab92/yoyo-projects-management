@@ -14,12 +14,13 @@ export const translations: Record<Locale, Record<string, string>> = {
     "newProject": "New Project", "editProject": "Edit Project", "projectName": "Project Name", "description": "Description", "startDate": "Start Date", "endDate": "End Date", "createProject": "Create Project", "updateProject": "Update Project",
     "deleteProjectTitle": "Delete Project", "deleteProjectMessage": "Are you sure you want to delete this project? This will permanently delete all associated tasks, team members, budget items, and risks. This action cannot be undone.",
     "deleteItemTitle": "Confirm Deletion", "deleteItemMessage": "Are you sure? This cannot be undone.",
-    "addTask": "Add Task", "editTask": "Edit Task", "taskName": "Task Name", "status": "Status", "assignee": "Assignee", "dueDate": "Due Date", "progress": "Progress", "reminderDate": "Reminder Date",
+    "addTask": "Add Task", "editTask": "Edit Task", "taskName": "Task Name", "status": "Status", "assignee": "Assignee", "dueDate": "Due Date", "progress": "Progress", "reminderDate": "Reminder Date", "dependsOn": "Depends On",
     "addTeamMember": "Add Team Member", "editTeamMember": "Edit Team Member", "memberName": "Member Name", "role": "Role", "addMemberByEmail": "Add member by email",
     "addBudgetItem": "Add Budget Item", "editBudgetItem": "Edit Budget Item", "category": "Category", "plannedBudget": "Planned Budget", "actualSpending": "Actual Spending",
     "addRisk": "Add Risk", "editRisk": "Edit Risk", "likelihood": "Likelihood", "impact": "Impact", "mitigation": "Mitigation Strategy",
     "parentTaskNotDoneError": "Cannot complete this task. Please finish parent task '{parentTaskName}' first.",
     "reminderToast": "Reminder for task: \"{taskName}\"",
+    "taskBlockedByDependencies": "Cannot update task. It depends on incomplete tasks: {tasks}",
     // CRUD Feedback
     "saveProjectSuccess": "Project '{name}' saved successfully.", "createProjectSuccess": "Project '{name}' created successfully.", "saveProjectError": "Failed to save project. Please try again.",
     "deleteProjectSuccess": "Project '{name}' and all its data have been deleted.", "deleteProjectError": "Failed to delete project. Please try again.",
@@ -37,7 +38,7 @@ export const translations: Record<Locale, Record<string, string>> = {
     "settingsTitle": "Global Activity Log", "activityLog": "Activity Log", "noActivity": "No activity recorded yet.", "action": "Action", "user": "User", "project": "Project", "timestamp": "Timestamp",
     "reportsTitle": "Reports for {projectName}", "projectSummary": "Project Summary", "exportToCsv": "Export to CSV", "exportToPdf": "Export to PDF",
     // Task Page enhancements
-    "filterByAssignee": "Filter by assignee", "filterByStatus": "Filter by status", "sortBy": "Sort By", "priorityDesc": "Priority (High to Low)", "priorityAsc": "Priority (Low to High)", "dueDateSort": "Due Date",
+    "filterByAssignee": "Filter by assignee", "filterByStatus": "Filter by status", "sortBy": "Sort By", "priorityDesc": "Priority (High to Low)", "priorityAsc": "Priority (Low to High)", "dueDateSort": "Due Date", "filterByPriority": "Filter by priority", "assigneeSort": "Assignee", "all": "All",
     // Task Statuses
     "toDo": "To Do", "inProgress": "In Progress", "done": "Done", "archived": "Archived"
   },
@@ -54,12 +55,13 @@ export const translations: Record<Locale, Record<string, string>> = {
     "newProject": "مشروع جديد", "editProject": "تعديل المشروع", "projectName": "اسم المشروع", "description": "الوصف", "startDate": "تاريخ البدء", "endDate": "تاريخ الانتهاء", "createProject": "إنشاء مشروع", "updateProject": "تحديث المشروع",
     "deleteProjectTitle": "حذف المشروع", "deleteProjectMessage": "هل أنت متأكد أنك تريد حذف هذا المشروع؟ سيؤدي هذا إلى حذف جميع المهام وأعضاء الفريق وبنود الميزانية والمخاطر المرتبطة به بشكل دائم. لا يمكن التراجع عن هذا الإجراء.",
     "deleteItemTitle": "تأكيد الحذف", "deleteItemMessage": "هل أنت متأكد؟ لا يمكن التراجع عن هذا.",
-    "addTask": "إضافة مهمة", "editTask": "تعديل المهمة", "taskName": "اسم المهمة", "status": "الحالة", "assignee": "المسؤول", "dueDate": "تاريخ الاستحقاق", "progress": "التقدم", "reminderDate": "تاريخ التذكير",
+    "addTask": "إضافة مهمة", "editTask": "تعديل المهمة", "taskName": "اسم المهمة", "status": "الحالة", "assignee": "المسؤول", "dueDate": "تاريخ الاستحقاق", "progress": "التقدم", "reminderDate": "تاريخ التذكير", "dependsOn": "تعتمد على",
     "addTeamMember": "إضافة عضو للفريق", "editTeamMember": "تعديل عضو الفريق", "memberName": "اسم العضو", "role": "الدور", "addMemberByEmail": "إضافة عضو بالبريد الإلكتروني",
     "addBudgetItem": "إضافة بند ميزانية", "editBudgetItem": "تعديل بند الميزانية", "category": "الفئة", "plannedBudget": "الميزانية المخططة", "actualSpending": "الإنفاق الفعلي",
     "addRisk": "إضافة مخاطرة", "editRisk": "تعديل المخاطرة", "likelihood": "الاحتمالية", "impact": "التأثير", "mitigation": "استراتيجية التخفيف",
     "parentTaskNotDoneError": "لا يمكن إكمال هذه المهمة. يرجى إنهاء المهمة الرئيسية '{parentTaskName}' أولاً.",
     "reminderToast": "تذكير للمهمة: \"{taskName}\"",
+    "taskBlockedByDependencies": "لا يمكن تحديث المهمة. تعتمد على مهام غير مكتملة: {tasks}",
     // CRUD Feedback
     "saveProjectSuccess": "تم حفظ المشروع '{name}' بنجاح.", "createProjectSuccess": "تم إنشاء المشروع '{name}' بنجاح.", "saveProjectError": "فشل حفظ المشروع. يرجى المحاولة مرة أخرى.",
     "deleteProjectSuccess": "تم حذف المشروع '{name}' وجميع بياناته.", "deleteProjectError": "فشل حذف المشروع. يرجى المحاولة مرة أخرى.",
@@ -77,7 +79,7 @@ export const translations: Record<Locale, Record<string, string>> = {
     "settingsTitle": "سجل النشاط العالمي", "activityLog": "سجل النشاط", "noActivity": "لم يتم تسجيل أي نشاط بعد.", "action": "الإجراء", "user": "المستخدم", "project": "المشروع", "timestamp": "الوقت",
     "reportsTitle": "تقارير مشروع {projectName}", "projectSummary": "ملخص المشروع", "exportToCsv": "تصدير إلى CSV", "exportToPdf": "تصدير إلى PDF",
     // Task Page enhancements
-    "filterByAssignee": "تصفية حسب المسؤول", "filterByStatus": "تصفية حسب الحالة", "sortBy": "فرز حسب", "priorityDesc": "الأولوية (من الأعلى إلى الأقل)", "priorityAsc": "الأولوية (من الأقل إلى الأعلى)", "dueDateSort": "تاريخ الاستحقاق",
+    "filterByAssignee": "تصفية حسب المسؤول", "filterByStatus": "تصفية حسب الحالة", "sortBy": "فرز حسب", "priorityDesc": "الأولوية (من الأعلى إلى الأقل)", "priorityAsc": "الأولوية (من الأقل إلى الأعلى)", "dueDateSort": "تاريخ الاستحقاق", "filterByPriority": "تصفية حسب الأولوية", "assigneeSort": "المسؤول", "all": "الكل",
     // Task Statuses
     "toDo": "قيد التنفيذ", "inProgress": "جاري التنفيذ", "done": "مكتمل", "archived": "مؤرشف"
   }

@@ -1,16 +1,19 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 // Fix: Separated Firebase 'User' type import from function imports.
-import { onAuthStateChanged, signInWithEmailAndPassword, signOut } from 'firebase/auth';
-import type { User } from 'firebase/auth';
+// FIX: Switched to Firebase compat mode. Removing modular auth function imports.
+// import { onAuthStateChanged, signInWithEmailAndPassword, signOut } from 'firebase/auth';
+// import type { User } from 'firebase/auth';
+// FIX: Import User type from compat library.
+import type { User } from 'firebase/compat/auth';
 import { 
-    collection, onSnapshot, doc, addDoc, updateDoc, writeBatch, query, where, getDocs, serverTimestamp, setDoc, getDoc
+    collection, onSnapshot, doc, addDoc, updateDoc, writeBatch, query, where, getDocs, serverTimestamp, setDoc, getDoc, Timestamp
 } from 'firebase/firestore';
 
 import { auth, db } from './lib/firebase';
 import { logActivity } from './lib/activityLog';
 import { translations } from './lib/i18n';
-import { Project, Locale } from './types';
+import { Project, Locale, Task } from './types';
 
 import { ToastProvider } from './context/ToastContext';
 import { useToast } from './hooks/useToast';
@@ -50,6 +53,7 @@ const AppContainer = () => {
     const [isDeleteModalOpen, setDeleteModalOpen] = useState(false);
     const [projectToEdit, setProjectToEdit] = useState<Project | null>(null);
     const [projectToDelete, setProjectToDelete] = useState<Project | null>(null);
+    const [notifiedTaskIds, setNotifiedTaskIds] = useState<string[]>([]);
 
     const { addToast } = useToast();
     const currentProject = useMemo(() => projects.find(p => p.id === selectedProjectId) || null, [projects, selectedProjectId]);
@@ -73,7 +77,8 @@ const AppContainer = () => {
     }, [locale]);
     
     useEffect(() => {
-        const unsubscribe = onAuthStateChanged(auth, async (authUser) => {
+        // FIX: Use auth.onAuthStateChanged from compat API.
+        const unsubscribe = auth.onAuthStateChanged(async (authUser) => {
             if (authUser) {
                 const userDocRef = doc(db, 'users', authUser.uid);
                 const userDoc = await getDoc(userDocRef);
@@ -121,9 +126,40 @@ const AppContainer = () => {
         }
     }, [projects, selectedProjectId]);
 
+    useEffect(() => {
+        if (!user) return;
 
-    const handleLogin = (email: string, pass: string) => signInWithEmailAndPassword(auth, email, pass);
-    const handleSignOut = () => signOut(auth);
+        const checkReminders = async () => {
+            try {
+                const now = new Date();
+                const q = query(
+                    collection(db, 'tasks'),
+                    where('assignedTo', '==', user.uid),
+                    where('status', '!=', 'Done'),
+                    where('reminderDate', '<=', Timestamp.fromDate(now))
+                );
+                const snapshot = await getDocs(q);
+                snapshot.forEach(doc => {
+                    const task = { id: doc.id, ...doc.data() } as Task;
+                    if (task.reminderDate && !notifiedTaskIds.includes(task.id)) {
+                        addToast(t('reminderToast', { taskName: task.title }), 'info');
+                        setNotifiedTaskIds(prev => [...prev, task.id]);
+                    }
+                });
+            } catch (error) {
+                console.error("Error checking reminders:", error);
+            }
+        };
+
+        const intervalId = setInterval(checkReminders, 60000); // Check every minute
+        return () => clearInterval(intervalId);
+    }, [user, notifiedTaskIds, addToast, t]);
+
+
+    // FIX: Use auth.signInWithEmailAndPassword from compat API.
+    const handleLogin = (email: string, pass: string) => auth.signInWithEmailAndPassword(email, pass);
+    // FIX: Use auth.signOut from compat API.
+    const handleSignOut = () => auth.signOut();
     const toggleTheme = () => setTheme(prev => prev === 'light' ? 'dark' : 'light');
     const toggleLocale = () => setLocale(prev => prev === 'en' ? 'ar' : 'en');
     const handleSelectProject = (id: string) => {

@@ -1,18 +1,19 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { collection, query, where, onSnapshot, doc, addDoc, updateDoc, deleteDoc, serverTimestamp, Timestamp } from 'firebase/firestore';
 import { db } from '../lib/firebase';
 import { useProjectContext } from '../hooks/useProjectContext';
-import { Task, User, TaskStatus } from '../types';
+import { Task, User, TaskStatus, Priority } from '../types';
 import { logActivity } from '../lib/activityLog';
 import EmptyState from '../components/EmptyState';
 import BouncingLoader from '../components/BouncingLoader';
 import TaskModal from '../components/TaskModal';
 import ConfirmationModal from '../components/ConfirmationModal';
-import { Plus, Edit, Trash2 } from 'lucide-react';
+import { Plus, Edit, Trash2, Lock } from 'lucide-react';
 import { motion } from 'framer-motion';
-import { getStatusColor, formatDateTime } from '../lib/helpers';
+import { formatDateTime, getPriorityTagColor } from '../lib/helpers';
 
-// Fix: Updated t function prop type to allow for a parameters object.
+const priorityOrder: Record<Priority, number> = { 'Urgent': 4, 'High': 3, 'Medium': 2, 'Low': 1 };
+
 const TasksPage: React.FC<{ t: (key: string, params?: Record<string, string>) => string; locale: string }> = ({ t, locale }) => {
     const { currentProject } = useProjectContext();
     const [tasks, setTasks] = useState<Task[]>([]);
@@ -23,6 +24,9 @@ const TasksPage: React.FC<{ t: (key: string, params?: Record<string, string>) =>
     const [taskToEdit, setTaskToEdit] = useState<Task | null>(null);
     const [taskToDelete, setTaskToDelete] = useState<Task | null>(null);
 
+    const [priorityFilter, setPriorityFilter] = useState<Priority | 'All'>('All');
+    const [sortBy, setSortBy] = useState<string>('priority-desc');
+
     useEffect(() => {
         if (!currentProject) return;
 
@@ -30,9 +34,9 @@ const TasksPage: React.FC<{ t: (key: string, params?: Record<string, string>) =>
         const q = query(collection(db, 'tasks'), where('projectId', '==', currentProject.id));
         const unsubscribe = onSnapshot(q, (snapshot) => {
             const tasksData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Task));
-            setTasks(tasksData.sort((a, b) => a.dueDate.seconds - b.dueDate.seconds));
+            setTasks(tasksData);
             setLoading(false);
-        });
+        }, () => setLoading(false));
 
         const teamUnsubscribe = onSnapshot(collection(db, 'users'), snapshot => {
             const allUsers = snapshot.docs.map(d => ({id: d.id, ...d.data()}) as User);
@@ -45,19 +49,42 @@ const TasksPage: React.FC<{ t: (key: string, params?: Record<string, string>) =>
         }
     }, [currentProject]);
 
+    const sortedAndFilteredTasks = useMemo(() => {
+        const teamNameMap = new Map(team.map(member => [member.id, member.name]));
+
+        let result = tasks.filter(task => priorityFilter === 'All' || task.priority === priorityFilter);
+
+        result.sort((a, b) => {
+            switch (sortBy) {
+                case 'priority-desc':
+                    return (priorityOrder[b.priority!] ?? 0) - (priorityOrder[a.priority!] ?? 0);
+                case 'priority-asc':
+                    return (priorityOrder[a.priority!] ?? 0) - (priorityOrder[b.priority!] ?? 0);
+                case 'dueDate-asc':
+                    return a.dueDate.seconds - b.dueDate.seconds;
+                case 'assignee-asc':
+                    return (teamNameMap.get(a.assignedTo!) ?? '').localeCompare(teamNameMap.get(b.assignedTo!) ?? '');
+                default:
+                    return 0;
+            }
+        });
+
+        return result;
+    }, [tasks, team, priorityFilter, sortBy]);
+
     const handleOpenModal = (task: Task | null = null) => {
         setTaskToEdit(task);
         setModalOpen(true);
     };
 
-    const handleSaveTask = async (taskData: Omit<Task, 'id' | 'projectId'>) => {
+    const handleSaveTask = async (taskData: Omit<Task, 'id' | 'projectId' | 'createdAt'>) => {
         if (!currentProject) return;
         try {
             if (taskToEdit) {
-                await updateDoc(doc(db, 'tasks', taskToEdit.id), taskData);
+                await updateDoc(doc(db, 'tasks', taskToEdit.id), taskData as any);
                 logActivity('Updated task', { projectId: currentProject.id, taskId: taskToEdit.id, title: taskData.title });
             } else {
-                const newTask = { ...taskData, projectId: currentProject.id };
+                const newTask = { ...taskData, projectId: currentProject.id, createdAt: serverTimestamp() };
                 const docRef = await addDoc(collection(db, 'tasks'), newTask);
                 logActivity('Created task', { projectId: currentProject.id, taskId: docRef.id, title: taskData.title });
             }
@@ -85,13 +112,21 @@ const TasksPage: React.FC<{ t: (key: string, params?: Record<string, string>) =>
     }
     
     const getAssigneeName = (userId: string | null) => team.find(m => m.id === userId)?.name || 'Unassigned';
+    
+    const isTaskBlocked = (task: Task): boolean => {
+        if (!task.dependsOn || task.dependsOn.length === 0) return false;
+        return task.dependsOn.some(depId => {
+            const dependency = tasks.find(t => t.id === depId);
+            return dependency && dependency.status !== 'Done';
+        });
+    };
 
     const renderTaskList = (status: TaskStatus) => (
         <div key={status}>
-            <h2 className="text-lg font-semibold mb-3">{t(status === 'To Do' ? 'toDo' : status === 'In Progress' ? 'inProgress' : 'done')}</h2>
+            <h2 className="text-lg font-semibold mb-3 capitalize">{t(status === 'To Do' ? 'toDo' : status === 'In Progress' ? 'inProgress' : 'done')}</h2>
             <div className="space-y-3">
-                {tasks.filter(t => t.status === status).map(task => (
-                    <motion.div layout key={task.id} className="p-4 bg-white dark:bg-dark-secondary rounded-lg shadow group">
+                {sortedAndFilteredTasks.filter(t => t.status === status).map(task => (
+                    <motion.div layout key={task.id} className="p-4 bg-white dark:bg-dark-secondary rounded-lg shadow group space-y-2">
                         <div className="flex justify-between items-start">
                            <h3 className="font-semibold text-gray-800 dark:text-gray-200">{task.title}</h3>
                            <div className="flex items-center space-x-2 opacity-0 group-hover:opacity-100 transition-opacity">
@@ -100,9 +135,29 @@ const TasksPage: React.FC<{ t: (key: string, params?: Record<string, string>) =>
                            </div>
                         </div>
                         <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">{task.description}</p>
-                        <div className="flex justify-between items-center mt-3 text-xs">
-                            <span className="font-medium text-gray-600 dark:text-gray-300">{getAssigneeName(task.assignedTo)}</span>
-                            <span className="text-gray-500">{formatDateTime(task.dueDate, locale as 'en' | 'ar')}</span>
+
+                        {task.progress !== undefined && (
+                            <div>
+                                <div className="flex justify-between text-xs mb-1">
+                                    <span className="font-medium text-gray-600 dark:text-gray-300">{t('progress')}</span>
+                                    <span>{task.progress}%</span>
+                                </div>
+                                <div className="w-full bg-gray-200 rounded-full h-1.5 dark:bg-gray-700">
+                                    <div className="bg-primary h-1.5 rounded-full" style={{ width: `${task.progress || 0}%` }}></div>
+                                </div>
+                            </div>
+                        )}
+
+                        <div className="flex justify-between items-center pt-2 text-xs">
+                            <div className="flex items-center space-x-2">
+                                <span className="font-medium text-gray-600 dark:text-gray-300">{getAssigneeName(task.assignedTo)}</span>
+                                {/* FIX: The `title` prop is not valid on the lucide-react Lock component. Wrapping with a span and using the HTML title attribute for tooltip functionality. */}
+                                {isTaskBlocked(task) && <span title="Blocked"><Lock size={12} className="text-yellow-500" /></span>}
+                            </div>
+                            <div className="flex items-center space-x-2">
+                                {task.priority && <span className={`px-2 py-0.5 rounded-full font-semibold ${getPriorityTagColor(task.priority)}`}>{t(task.priority.toLowerCase())}</span>}
+                                <span className="text-gray-500">{formatDateTime(task.dueDate, locale as 'en' | 'ar')}</span>
+                            </div>
                         </div>
                     </motion.div>
                 ))}
@@ -114,16 +169,37 @@ const TasksPage: React.FC<{ t: (key: string, params?: Record<string, string>) =>
 
     return (
         <div className="p-6 md:p-8">
-            <div className="flex justify-between items-center mb-6">
+            <div className="flex flex-wrap justify-between items-center gap-4 mb-6">
                 <h1 className="text-2xl font-semibold text-gray-900 dark:text-white">
                     {t('tasksTitle', { projectName: currentProject.name })}
                 </h1>
-                <button
-                    onClick={() => handleOpenModal()}
-                    className="flex items-center px-4 py-2 text-sm font-medium text-white bg-primary rounded-lg shadow-sm hover:bg-primary-dark"
-                >
-                    <Plus size={16} className="mr-2" /> {t('addTask')}
-                </button>
+                <div className="flex items-center gap-4">
+                     <div>
+                        <label htmlFor="priorityFilter" className="text-sm font-medium mr-2">{t('filterByPriority')}:</label>
+                        <select id="priorityFilter" value={priorityFilter} onChange={e => setPriorityFilter(e.target.value as any)} className="bg-white dark:bg-dark-secondary border border-gray-300 dark:border-gray-600 rounded-md px-2 py-1 text-sm">
+                            <option value="All">{t('all')}</option>
+                            <option value="Urgent">{t('urgent')}</option>
+                            <option value="High">{t('high')}</option>
+                            <option value="Medium">{t('medium')}</option>
+                            <option value="Low">{t('low')}</option>
+                        </select>
+                    </div>
+                     <div>
+                        <label htmlFor="sortBy" className="text-sm font-medium mr-2">{t('sortBy')}:</label>
+                        <select id="sortBy" value={sortBy} onChange={e => setSortBy(e.target.value)} className="bg-white dark:bg-dark-secondary border border-gray-300 dark:border-gray-600 rounded-md px-2 py-1 text-sm">
+                            <option value="priority-desc">{t('priorityDesc')}</option>
+                            <option value="priority-asc">{t('priorityAsc')}</option>
+                            <option value="dueDate-asc">{t('dueDateSort')}</option>
+                            <option value="assignee-asc">{t('assigneeSort')}</option>
+                        </select>
+                    </div>
+                    <button
+                        onClick={() => handleOpenModal()}
+                        className="flex items-center px-4 py-2 text-sm font-medium text-white bg-primary rounded-lg shadow-sm hover:bg-primary-dark"
+                    >
+                        <Plus size={16} className="mr-2" /> {t('addTask')}
+                    </button>
+                </div>
             </div>
 
             {loading ? <BouncingLoader /> : tasks.length === 0 ? (
@@ -142,6 +218,7 @@ const TasksPage: React.FC<{ t: (key: string, params?: Record<string, string>) =>
                 onSave={handleSaveTask}
                 task={taskToEdit}
                 teamMembers={team}
+                allTasks={tasks}
                 t={t}
             />
             <ConfirmationModal

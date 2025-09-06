@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 // Fix: Separated Firebase 'User' type import from function imports.
-import type { User as FirebaseUser } from 'firebase/auth';
+// FIX: Use User type from firebase/compat/auth
+import type { User as FirebaseUser } from 'firebase/compat/auth';
 import { collection, query, where, onSnapshot } from 'firebase/firestore';
 import { db } from '../lib/firebase';
 import { Task, Project } from '../types';

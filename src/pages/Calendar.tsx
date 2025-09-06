@@ -34,7 +34,8 @@ const CalendarPage: React.FC<{ t: (key: string, params?: Record<string, string>)
         resource: task,
     })), [tasks]);
     
-    const handleSelectEvent = (event: {resource: Task}) => {
+    // FIX: Correctly type the event parameter to fix type inference for the Calendar component.
+    const handleSelectEvent = (event: (typeof events)[0]) => {
         // For now, let's just log it. A modal could be opened here.
         console.log(event.resource);
         // setSelectedTask(event.resource);

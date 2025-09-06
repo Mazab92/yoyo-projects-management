@@ -34,6 +34,13 @@ export interface Task {
   assignedTo: string | null; // User ID
   status: TaskStatus;
   dueDate: Timestamp;
+  createdAt: Timestamp;
+
+  // --- NEW FIELDS ---
+  priority?: Priority;
+  progress?: number; // 0 to 100
+  dependsOn?: string[]; // Array of task IDs
+  reminderDate?: Timestamp;
 }
 
 export type RiskSeverity = 'Low' | 'Medium' | 'High';
