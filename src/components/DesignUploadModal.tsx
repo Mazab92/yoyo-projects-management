@@ -4,6 +4,7 @@ import { useProjectContext } from '../hooks/useProjectContext';
 import { auth } from '../lib/firebase';
 import { useToast } from '../hooks/useToast';
 import BouncingLoader from './BouncingLoader';
+import { logActivity } from '../lib/activityLog';
 
 interface DesignUploadModalProps {
     isOpen: boolean;
@@ -63,6 +64,7 @@ const DesignUploadModal: React.FC<DesignUploadModalProps> = ({ isOpen, onClose, 
                 throw new Error(errorData.error || 'Upload failed');
             }
 
+            await logActivity(`Uploaded design file: ${file.name}`, { projectId: currentProject.id });
             addToast(t('uploadSuccess'), 'success');
             handleClose();
         } catch (error) {
