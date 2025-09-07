@@ -5,7 +5,7 @@ export const translations: Record<Locale, Record<string, string>> = {
     // General
     "save": "Save", "cancel": "Cancel", "delete": "Delete", "confirm": "Confirm", "edit": "Edit", "add": "Add", "urgent": "Urgent", "high": "High", "medium": "Medium", "low": "Low", "priority": "Priority", "parentTask": "Parent Task", "parent": "Parent", "severity": "Severity",
     // Sidebar
-    "dashboard": "Dashboard", "tasks": "Tasks", "calendar": "Calendar", "team": "Team", "budget": "Budget", "risks": "Risks", "projects": "Projects", "settings": "Settings", "reports": "Reports",
+    "dashboard": "Dashboard", "tasks": "Tasks", "calendar": "Calendar", "team": "Team", "budget": "Budget", "risks": "Risks", "projects": "Projects", "settings": "Settings", "reports": "Reports", "designs": "Designs",
     // Header
     "signOut": "Sign Out", "profile": "Profile",
     // Login
@@ -22,10 +22,12 @@ export const translations: Record<Locale, Record<string, string>> = {
     "parentTaskNotDoneError": "Cannot complete this task. Please finish parent task '{parentTaskName}' first.",
     "reminderToast": "Reminder for task: \"{taskName}\"",
     "taskBlockedByDependencies": "Cannot update task. It depends on incomplete tasks: {tasks}",
+    "uploadDesign": "Upload Design", "uploadFile": "Upload File", "selectFile": "Select a file",
     // CRUD Feedback
     "saveProjectSuccess": "Project '{name}' saved successfully.", "createProjectSuccess": "Project '{name}' created successfully.", "saveProjectError": "Failed to save project. Please try again.",
     "deleteProjectSuccess": "Project '{name}' and all its data have been deleted.", "deleteProjectError": "Failed to delete project. Please try again.",
     "teamMemberAdded": "Team member added successfully.", "teamMemberExists": "This user is already a member of the project.", "userNotFound": "User with this email not found.", "addMemberError": "Failed to add team member.",
+    "uploadSuccess": "File uploaded successfully.", "uploadError": "Failed to upload file. Please try again.",
     // Pages
     "noProjectSelected": "No Project Selected", "noProjectMessage": "Please select a project to begin.",
     "dashboardTitle": "Dashboard: {projectName}",
@@ -38,6 +40,7 @@ export const translations: Record<Locale, Record<string, string>> = {
     "profileTitle": "User Profile", "myTasks": "My Assigned Tasks", "myProjects": "My Projects", "achievements": "Achievements", "noAssignedTasks": "You have no tasks assigned to you.", "achievementCompletedProjects": "Completed {count} projects.",
     "settingsTitle": "Global Activity Log", "activityLog": "Activity Log", "noActivity": "No activity recorded yet.", "action": "Action", "user": "User", "project": "Project", "timestamp": "Timestamp",
     "reportsTitle": "Reports for {projectName}", "projectSummary": "Project Summary", "exportToCsv": "Export to CSV", "exportToPdf": "Export to PDF",
+    "designsFor": "Designs for {projectName}", "noDesigns": "No Designs Yet", "noDesignsMessage": "Get started by uploading your first design file.", "uploadedBy": "Uploaded by {name}", "designFolderMissing": "Project design folder is not available. Cannot upload files.",
     // Task Page enhancements
     "filterByAssignee": "Filter by assignee", "filterByStatus": "Filter by status", "sortBy": "Sort By", "priorityDesc": "Priority (High to Low)", "priorityAsc": "Priority (Low to High)", "dueDateSort": "Due Date", "filterByPriority": "Filter by priority", "assigneeSort": "Assignee", "all": "All",
     // Task Statuses
@@ -47,7 +50,7 @@ export const translations: Record<Locale, Record<string, string>> = {
     // General
     "save": "حفظ", "cancel": "إلغاء", "delete": "حذف", "confirm": "تأكيد", "edit": "تعديل", "add": "إضافة", "urgent": "عاجل", "high": "مرتفع", "medium": "متوسط", "low": "منخفض", "priority": "الأولوية", "parentTask": "المهمة الرئيسية", "parent": "رئيسي", "severity": "الخطورة",
     // Sidebar
-    "dashboard": "لوحة التحكم", "tasks": "المهام", "calendar": "التقويم", "team": "الفريق", "budget": "الميزانية", "risks": "المخاطر", "projects": "المشاريع", "settings": "الإعدادات", "reports": "التقارير",
+    "dashboard": "لوحة التحكم", "tasks": "المهام", "calendar": "التقويم", "team": "الفريق", "budget": "الميزانية", "risks": "المخاطر", "projects": "المشاريع", "settings": "الإعدادات", "reports": "التقارير", "designs": "التصاميم",
     // Header
     "signOut": "تسجيل الخروج", "profile": "الملف الشخصي",
     // Login
@@ -64,10 +67,12 @@ export const translations: Record<Locale, Record<string, string>> = {
     "parentTaskNotDoneError": "لا يمكن إكمال هذه المهمة. يرجى إنهاء المهمة الرئيسية '{parentTaskName}' أولاً.",
     "reminderToast": "تذكير للمهمة: \"{taskName}\"",
     "taskBlockedByDependencies": "لا يمكن تحديث المهمة. تعتمد على مهام غير مكتملة: {tasks}",
+    "uploadDesign": "رفع تصميم", "uploadFile": "رفع ملف", "selectFile": "اختر ملفًا",
     // CRUD Feedback
     "saveProjectSuccess": "تم حفظ المشروع '{name}' بنجاح.", "createProjectSuccess": "تم إنشاء المشروع '{name}' بنجاح.", "saveProjectError": "فشل حفظ المشروع. يرجى المحاولة مرة أخرى.",
     "deleteProjectSuccess": "تم حذف المشروع '{name}' وجميع بياناته.", "deleteProjectError": "فشل حذف المشروع. يرجى المحاولة مرة أخرى.",
     "teamMemberAdded": "تمت إضافة عضو الفريق بنجاح.", "teamMemberExists": "هذا المستخدم عضو بالفعل في المشروع.", "userNotFound": "لم يتم العثور على مستخدم بهذا البريد الإلكتروني.", "addMemberError": "فشل في إضافة عضو الفريق.",
+    "uploadSuccess": "تم رفع الملف بنجاح.", "uploadError": "فشل رفع الملف. يرجى المحاولة مرة أخرى.",
     // Pages
     "noProjectSelected": "لم يتم تحديد مشروع", "noProjectMessage": "يرجى تحديد مشروع للبدء.",
     "dashboardTitle": "لوحة التحكم: {projectName}",
@@ -80,6 +85,7 @@ export const translations: Record<Locale, Record<string, string>> = {
     "profileTitle": "الملف الشخصي للمستخدم", "myTasks": "المهام المسندة إلي", "myProjects": "مشاريعي", "achievements": "الإنجازات", "noAssignedTasks": "ليس لديك مهام مسندة إليك.", "achievementCompletedProjects": "أكملت {count} مشاريع.",
     "settingsTitle": "سجل النشاط العالمي", "activityLog": "سجل النشاط", "noActivity": "لم يتم تسجيل أي نشاط بعد.", "action": "الإجراء", "user": "المستخدم", "project": "المشروع", "timestamp": "الوقت",
     "reportsTitle": "تقارير مشروع {projectName}", "projectSummary": "ملخص المشروع", "exportToCsv": "تصدير إلى CSV", "exportToPdf": "تصدير إلى PDF",
+    "designsFor": "تصاميم مشروع {projectName}", "noDesigns": "لا توجد تصاميم بعد", "noDesignsMessage": "ابدأ برفع أول ملف تصميم لك.", "uploadedBy": "رفعه {name}", "designFolderMissing": "مجلد تصاميم المشروع غير متوفر. لا يمكن رفع الملفات.",
     // Task Page enhancements
     "filterByAssignee": "تصفية حسب المسؤول", "filterByStatus": "تصفية حسب الحالة", "sortBy": "فرز حسب", "priorityDesc": "الأولوية (من الأعلى إلى الأقل)", "priorityAsc": "الأولوية (من الأقل إلى الأعلى)", "dueDateSort": "تاريخ الاستحقاق", "filterByPriority": "تصفية حسب الأولوية", "assigneeSort": "المسؤول", "all": "الكل",
     // Task Statuses

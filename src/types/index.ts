@@ -19,6 +19,7 @@ export interface Project {
   createdAt: Timestamp;
   startDate: string; // Kept for UI consistency
   endDate: string; // Kept for UI consistency
+  googleDriveFolderId?: string; // ID of the associated Google Drive folder
 }
 
 export type TaskStatus = 'To Do' | 'In Progress' | 'Done';
@@ -71,6 +72,17 @@ export interface ActivityLog {
   projectName?: string;
   timestamp: Timestamp;
   details?: Record<string, any>;
+}
+
+export interface DesignFile {
+  id: string;
+  projectId: string;
+  name: string;
+  googleDriveFileId: string;
+  downloadUrl: string;
+  uploadedBy: string;
+  uploadedByName: string;
+  createdAt: Timestamp;
 }
 
 // UI-related types

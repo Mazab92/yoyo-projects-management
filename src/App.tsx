@@ -38,6 +38,7 @@ import BudgetPage from './pages/Budget';
 import RisksPage from './pages/Risks';
 import CalendarPage from './pages/Calendar';
 import ReportsPage from './pages/Reports';
+import DesignsPage from './pages/Designs';
 import SettingsPage from './pages/Settings';
 import ProfilePage from './pages/Profile';
 
@@ -211,7 +212,7 @@ const AppContainer = () => {
             const projectRef = doc(db, 'projects', projectId);
             batch.delete(projectRef);
 
-            const collectionsToDelete = ['tasks', 'team', 'budget', 'risks', 'activity_logs'];
+            const collectionsToDelete = ['tasks', 'team', 'budget', 'risks', 'activity_logs', 'files'];
             for (const coll of collectionsToDelete) {
                 const q = query(collection(db, coll), where('projectId', '==', projectId));
                 const snapshot = await getDocs(q);
@@ -229,7 +230,7 @@ const AppContainer = () => {
         }
     };
 
-    const handleSaveProject = async (projectData: Omit<Project, 'id' | 'createdBy' | 'team' | 'createdAt'>) => {
+    const handleSaveProject = async (projectData: Omit<Project, 'id' | 'createdBy' | 'team' | 'createdAt' | 'googleDriveFolderId'>) => {
         if (!user) return;
         try {
             if (projectToEdit) {
@@ -245,6 +246,28 @@ const AppContainer = () => {
                     createdAt: serverTimestamp(),
                 };
                 const docRef = await addDoc(collection(db, 'projects'), newProject);
+
+                // Call Cloud Function to create Google Drive folder
+                try {
+                    // This URL should be stored in environment variables. Using import.meta.env as per existing firebase.ts pattern.
+                    const createFolderFunctionUrl = (import.meta as any).env.VITE_CREATE_FOLDER_FUNCTION_URL;
+                    if (createFolderFunctionUrl) {
+                        const response = await fetch(createFolderFunctionUrl, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ projectId: docRef.id, projectName: projectData.name })
+                        });
+                        if (!response.ok) throw new Error('Failed to create project folder in Google Drive.');
+                        const { folderId } = await response.json();
+                        await updateDoc(docRef, { googleDriveFolderId: folderId });
+                    } else {
+                        console.warn('VITE_CREATE_FOLDER_FUNCTION_URL not set. Skipping Google Drive folder creation.');
+                    }
+                } catch (error) {
+                    console.error("Error creating Google Drive folder:", error);
+                    addToast('Project created, but failed to create associated design folder.', 'error');
+                }
+
                 // Also add project to user's project list
                 const userDocRef = doc(db, 'users', user.uid);
                 const userDoc = await getDoc(userDocRef);
@@ -311,6 +334,7 @@ const AppContainer = () => {
                                     <Route path="/team" element={<TeamPage t={t} />} />
                                     <Route path="/budget" element={<BudgetPage t={t} locale={locale} />} />
                                     <Route path="/risks" element={<RisksPage t={t} />} />
+                                    <Route path="/designs" element={<DesignsPage t={t} locale={locale} />} />
                                     <Route path="/reports" element={<ReportsPage t={t} locale={locale} />} />
                                 </Route>
                                 <Route path="/settings" element={<SettingsPage t={t} locale={locale} />} />

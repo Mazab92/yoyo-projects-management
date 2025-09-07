@@ -63,7 +63,10 @@ const TasksPage: React.FC<{ t: (key: string, params?: Record<string, string>) =>
                 case 'dueDate-asc':
                     return a.dueDate.seconds - b.dueDate.seconds;
                 case 'assignee-asc':
-                    return (teamNameMap.get(a.assignedTo!) ?? '').localeCompare(teamNameMap.get(b.assignedTo!) ?? '');
+                    // FIX: Explicitly handle null 'assignedTo' and undefined map lookups to ensure string types for localeCompare.
+                    const assigneeNameA = a.assignedTo ? teamNameMap.get(a.assignedTo) ?? '' : '';
+                    const assigneeNameB = b.assignedTo ? teamNameMap.get(b.assignedTo) ?? '' : '';
+                    return assigneeNameA.localeCompare(assigneeNameB);
                 default:
                     return 0;
             }

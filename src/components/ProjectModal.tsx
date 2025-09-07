@@ -6,7 +6,7 @@ interface ProjectModalProps {
     isOpen: boolean;
     onClose: () => void;
     // Fix: Corrected the Omit properties to match the Project type and the parent component's handler.
-    onSave: (project: Omit<Project, 'id' | 'createdBy' | 'team' | 'createdAt'>) => void;
+    onSave: (project: Omit<Project, 'id' | 'createdBy' | 'team' | 'createdAt' | 'googleDriveFolderId'>) => void;
     project: Project | null;
     t: (key: string) => string;
 }

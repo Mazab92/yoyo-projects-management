@@ -2,7 +2,7 @@ import React from 'react';
 import { NavLink } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { 
-    LayoutDashboard, Users, CheckSquare, Calendar, DollarSign, AlertTriangle, FileText, Plus, Settings, X, Trash2, Edit 
+    LayoutDashboard, Users, CheckSquare, Calendar, DollarSign, AlertTriangle, Palette, FileText, Plus, Settings, X, Trash2, Edit 
 } from 'lucide-react';
 import { Project } from '../types';
 
@@ -20,7 +20,7 @@ interface SidebarProps {
 
 const Sidebar: React.FC<SidebarProps> = ({ projects, selectedProjectId, onSelectProject, onNewProject, onEditProject, onDeleteProject, isOpen, onClose, t }) => {
     const navLinks = [
-        { name: t('dashboard'), icon: <LayoutDashboard size={20} />, path: '/' }, { name: t('tasks'), icon: <CheckSquare size={20} />, path: '/tasks' }, { name: t('calendar'), icon: <Calendar size={20} />, path: '/calendar' }, { name: t('team'), icon: <Users size={20} />, path: '/team' }, { name: t('budget'), icon: <DollarSign size={20} />, path: '/budget' }, { name: t('risks'), icon: <AlertTriangle size={20} />, path: '/risks' }, { name: t('reports'), icon: <FileText size={20} />, path: '/reports' }, { name: t('settings'), icon: <Settings size={20} />, path: '/settings' },
+        { name: t('dashboard'), icon: <LayoutDashboard size={20} />, path: '/' }, { name: t('tasks'), icon: <CheckSquare size={20} />, path: '/tasks' }, { name: t('calendar'), icon: <Calendar size={20} />, path: '/calendar' }, { name: t('team'), icon: <Users size={20} />, path: '/team' }, { name: t('budget'), icon: <DollarSign size={20} />, path: '/budget' }, { name: t('risks'), icon: <AlertTriangle size={20} />, path: '/risks' }, { name: t('designs'), icon: <Palette size={20} />, path: '/designs' }, { name: t('reports'), icon: <FileText size={20} />, path: '/reports' }, { name: t('settings'), icon: <Settings size={20} />, path: '/settings' },
     ];
     return (
         <>

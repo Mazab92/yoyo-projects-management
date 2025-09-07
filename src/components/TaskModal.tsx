@@ -140,7 +140,7 @@ const TaskModal: React.FC<TaskModalProps> = ({ isOpen, onClose, onSave, task, te
                  </div>
                  <div>
                     <label htmlFor="dependsOn" className="block text-sm font-medium text-gray-700 dark:text-gray-300">{t('dependsOn')}</label>
-                    <select id="dependsOn" multiple value={dependsOn} onChange={(e) => setDependsOn(Array.from(e.target.selectedOptions, option => option.value))} className="block w-full px-3 py-2 mt-1 text-gray-900 border rounded-md dark:bg-gray-700 dark:text-white h-24">
+                    <select id="dependsOn" multiple value={dependsOn} onChange={(e) => setDependsOn(Array.from(e.target.selectedOptions, (option: HTMLOptionElement) => option.value))} className="block w-full px-3 py-2 mt-1 text-gray-900 border rounded-md dark:bg-gray-700 dark:text-white h-24">
                         {dependencyOptions.map(opt => <option key={opt.id} value={opt.id}>{opt.title}</option>)}
                     </select>
                 </div>
